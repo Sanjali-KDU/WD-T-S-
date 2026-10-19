@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wedding Budget &amp; Payment Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- SheetJS build with cell styling support (xlsx-js-style) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+:root{
+  --blue:#1e3a8a; --blue-2:#2747a3; --blue-3:#1d4ed8; --blue-50:#f0f4fc; --blue-100:#dde5f7;
+  --gold:#c9a227; --gold-2:#b08a17; --gold-soft:#f8f1dc;
+  --ink:#18213d; --muted:#5d6885; --line:#e2e7f2; --bg:#f6f7fb; --white:#fff;
+  --green:#1d7148; --green-bg:#e5f4ec; --amber:#8a5d00; --amber-bg:#fcf2d8;
+  --red:#b42318; --red-bg:#fdecea; --gray-bg:#eef0f5;
+  --radius:14px; --shadow:0 1px 2px rgba(20,30,70,.05),0 6px 20px rgba(20,30,70,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body.modal-open{overflow:hidden}
+h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;margin:0;letter-spacing:.2px}
+button,input,select,textarea{font:inherit;color:inherit}
+.muted{color:var(--muted)}
+.wrap{max-width:1320px;margin:0 auto;padding:0 16px}
+
+/* Header */
+.app-header{background:linear-gradient(135deg,#132867 0%,#1e3a8a 55%,#2a4ba8 100%);color:#fff;border-bottom:3px solid var(--gold)}
+.app-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:20px;padding-bottom:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;color:var(--gold);flex:none}
+.brand h1{font-size:30px;font-weight:600;line-height:1.1}
+.brand p{margin:2px 0 0;font-size:13px;color:#cfd9f3}
+.header-total{text-align:right}
+.header-total small{display:block;color:#cfd9f3;font-size:12px;text-transform:uppercase;letter-spacing:.8px}
+.header-total strong{font-size:20px;color:#fff}
+.header-total strong em{font-style:normal;color:var(--gold)}
+
+/* Tabs */
+.tabs{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.tabs .wrap::-webkit-scrollbar{display:none}
+.tab{border:0;background:none;padding:14px 16px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--blue)}
+.tab.active{color:var(--blue);border-bottom-color:var(--gold)}
+
+main{padding:22px 0 60px}
+.view{display:none}
+.view.active{display:block}
+
+/* Page head */
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.page-head h2{font-size:30px;color:var(--blue);font-weight:700}
+.page-head p{margin:2px 0 0}
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;padding:9px 15px;font-weight:600;font-size:14px;cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s;white-space:nowrap}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:#17307a}
+.btn.gold{background:var(--gold);color:#1b1503}
+.btn.gold:hover{background:#b8931f}
+.btn.ghost{background:#fff;border-color:var(--line);color:var(--blue)}
+.btn.ghost:hover{border-color:var(--blue-100);background:var(--blue-50)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.danger:hover{background:#951c13}
+.btn.danger-ghost{background:#fff;border-color:#f3c7c2;color:var(--red)}
+.btn.danger-ghost:hover{background:var(--red-bg)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.link{background:none;border:0;padding:0;color:var(--blue-3);font-weight:600;cursor:pointer;text-align:left}
+.link:hover{text-decoration:underline}
+.link.muted{color:var(--muted);font-weight:500}
+
+/* Cards */
+.cards{display:grid;gap:14px;margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.card.c-gold::before{background:var(--gold)}
+.card.c-green::before{background:var(--green)}
+.card.c-red::before{background:#c2410c}
+.card .label{font-size:12.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.card .value{font-size:22px;font-weight:700;color:var(--ink);margin-top:4px;word-break:break-word}
+.card .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
+.panel h3{font-size:22px;color:var(--blue);font-weight:700;margin-bottom:12px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.panel-head h3{margin:0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-2>.panel{margin-bottom:0}
+.grid-2{margin-bottom:18px}
+
+/* Progress */
+.progress{height:12px;background:var(--blue-50);border-radius:999px;overflow:hidden;border:1px solid var(--blue-100)}
+.progress>span{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-3));border-radius:999px}
+.progress.gold>span{background:linear-gradient(90deg,var(--gold-2),var(--gold))}
+.progress-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:6px;gap:10px;flex-wrap:wrap}
+.big-pct{font-size:28px;font-weight:700;color:var(--blue)}
+
+/* Section summary cards on dashboard */
+.sec-card .rows{display:grid;grid-template-columns:1fr auto;gap:6px 12px;margin:10px 0 12px;font-size:14px}
+.sec-card .rows span{color:var(--muted)}
+.sec-card .rows b{text-align:right}
+
+/* Chart */
+.chart-row{margin-bottom:12px}
+.chart-row .cl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;gap:10px}
+.chart-row .cl b{font-weight:600}
+.chart-track{height:16px;background:var(--gray-bg);border-radius:6px;position:relative;overflow:hidden}
+.chart-est{position:absolute;left:0;top:0;bottom:0;background:var(--blue-100);border-radius:6px}
+.chart-paid{position:absolute;left:0;top:0;bottom:0;background:var(--blue);border-radius:6px}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* Lists */
+.top-list{list-style:none;margin:0;padding:0}
+.top-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.top-list li:last-child{border-bottom:0}
+.top-list .t{min-width:0}
+.top-list .t div{font-weight:600}
+.top-list .t small{color:var(--muted)}
+.top-list .amt{font-weight:700;color:#9a3412;white-space:nowrap}
+
+/* Alerts / notice */
+.notice{display:flex;gap:12px;align-items:flex-start;background:var(--gold-soft);border:1px solid #ecdcae;border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:13.5px}
+.notice .ic{color:var(--gold-2);flex:none;margin-top:1px}
+.notice .grow{flex:1}
+.alert-list{display:grid;gap:8px;margin-bottom:18px}
+.alert{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:10px;font-size:13.5px;border:1px solid}
+.alert.overdue{background:var(--red-bg);border-color:#f5c2bd;color:#7a1a12}
+.alert.soon{background:var(--amber-bg);border-color:#f0dca4;color:#6b4800}
+
+/* Pills */
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;border:1px solid}
+.st-full{background:var(--green-bg);color:var(--green);border-color:#bfe3cf}
+.st-partial{background:var(--amber-bg);color:var(--amber);border-color:#f0dca4}
+.st-pending{background:var(--gray-bg);color:#4a5370;border-color:#dde1ea}
+.due{display:inline-block;margin-top:3px;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:6px}
+.due.overdue{background:var(--red-bg);color:var(--red)}
+.due.soon{background:var(--amber-bg);color:var(--amber)}
+.due.later{background:var(--blue-50);color:var(--blue)}
+.tag{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:6px;background:var(--blue-50);color:var(--blue);font-weight:600}
+.tag.gold{background:var(--gold-soft);color:#7a5f0c}
+.neg{color:var(--red)!important}
+.over{color:var(--red);font-weight:600}
+
+/* Toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.input{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;min-height:40px;outline:none}
+.input:focus{border-color:var(--blue-3);box-shadow:0 0 0 3px rgba(29,78,216,.12)}
+.toolbar input[type=search]{flex:1 1 240px;min-width:0}
+.toolbar select{flex:0 1 auto}
+
+/* Table */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%}
+.vt th,.vt td,.st th,.st td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13.5px}
+.vt th,.st th{background:var(--blue-50);color:var(--blue);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;position:sticky;top:0}
+.vt th.sortable{cursor:pointer}
+.vt th.sortable:hover{color:var(--blue-3)}
+.vt tbody tr:hover{background:#fafbfe}
+.num{text-align:right!important;white-space:nowrap;font-variant-numeric:tabular-nums}
+.vt tfoot td,.st tfoot td{background:var(--gold-soft);font-weight:700;border-top:2px solid var(--gold);border-bottom:0}
+.vt td.vname strong{display:block}
+.row-actions{display:flex;flex-wrap:wrap;gap:4px;min-width:230px}
+.ab{border:1px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer}
+.ab:hover{background:var(--blue-50);border-color:var(--blue-100)}
+.ab.pay{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ab.pay:hover{background:#17307a}
+.ab.del{color:var(--red)}
+.ab.del:hover{background:var(--red-bg);border-color:#f3c7c2}
+.empty{text-align:center;padding:38px 16px;color:var(--muted)}
+.empty .ei{font-size:34px;color:var(--gold);margin-bottom:6px}
+.empty h4{margin:0 0 4px;color:var(--ink);font-size:16px}
+.empty p{margin:0 0 14px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(14,22,50,.5);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto;z-index:100}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(10,20,50,.3);display:flex;flex-direction:column;margin:auto 0}
+.modal.sm{max-width:460px}
+.modal.lg{max-width:920px}
+.modal.xl{max-width:1100px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.modal-head h3{font-size:24px;color:var(--blue);font-weight:700}
+.icon-btn{border:0;background:var(--gray-bg);width:34px;height:34px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;color:var(--muted);flex:none}
+.icon-btn:hover{background:var(--blue-100);color:var(--blue)}
+.modal-body{padding:18px 20px}
+.modal-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+.modal-foot .muted{margin-right:auto;font-size:13px}
+.confirm-msg{font-size:14.5px}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f.full{grid-column:1/-1}
+.f>span{font-size:13px;font-weight:600;color:var(--ink)}
+.f small{font-size:12px;color:var(--muted)}
+.f input,.f select,.f textarea{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;outline:none;min-height:40px;width:100%}
+.f textarea{resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--blue-3);box-shadow:0 0 0 3px rgba(29,78,216,.12)}
+.f input.invalid,.f select.invalid{border-color:var(--red);box-shadow:0 0 0 3px rgba(180,35,24,.1)}
+.f input:disabled{background:var(--gray-bg)}
+.form-error{background:var(--red-bg);border:1px solid #f5c2bd;color:#7a1a12;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13.5px}
+.form-error ul{margin:4px 0 0;padding-left:18px}
+.calc-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:12px;padding:12px 14px}
+.calc-preview div{display:flex;flex-direction:column;gap:2px}
+.calc-preview span{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.calc-preview b{font-size:16px}
+.date-line{display:flex;gap:6px}
+.date-line input{flex:1}
+.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.summary-strip>div{background:var(--blue-50);border:1px solid var(--blue-100);border-radius:10px;padding:10px 12px}
+.summary-strip span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+.summary-strip b{font-size:15.5px}
+
+/* Details */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 18px;margin-bottom:16px}
+.info-grid div span{display:block;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.info-grid div p{margin:2px 0 0;white-space:pre-wrap;word-break:break-word}
+.subhead{font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
+
+/* Attachments */
+.att-list{display:grid;gap:8px}
+.att{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;flex-wrap:wrap}
+.att .fi{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.att .fi.pdf{background:var(--red-bg);color:var(--red)}
+.att .fi.img{background:var(--blue-50);color:var(--blue)}
+.att .meta{flex:1;min-width:160px}
+.att .meta div{font-weight:600;word-break:break-all}
+.att .meta small{color:var(--muted)}
+.att .acts{display:flex;gap:6px;flex-wrap:wrap}
+.upload-box{border:1.5px dashed var(--blue-100);background:var(--blue-50);border-radius:12px;padding:14px;margin-bottom:16px;display:grid;gap:10px}
+.upload-box .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.upload-box input[type=file]{flex:1;min-width:200px}
+.preview-frame{width:100%;height:72vh;border:1px solid var(--line);border-radius:10px;background:#f2f2f2}
+.preview-img{text-align:center;background:#f4f5f8;border-radius:10px;padding:10px}
+.preview-img img{max-width:100%;max-height:72vh;border-radius:6px}
+
+/* Backup page */
+.help ol{margin:6px 0 0;padding-left:20px}
+.help li{margin-bottom:6px}
+.btn-stack{display:flex;flex-wrap:wrap;gap:8px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13.5px;margin:10px 0}
+.kv span{color:var(--muted)}
+
+/* Toasts */
+#toasts{position:fixed;bottom:18px;right:18px;left:18px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:200;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);font-size:14px;max-width:420px;pointer-events:auto;border-left:4px solid var(--gold)}
+.toast.err{background:#7a1a12;border-left-color:#ffb4ab}
+.toast.ok{border-left-color:#7fd1a6}
+
+#printArea{display:none}
+
+/* Responsive */
+@media (max-width:980px){.grid-2{grid-template-columns:1fr}}
+@media (max-width:760px){
+  .brand h1{font-size:24px}
+  .header-total{text-align:left}
+  .page-head h2{font-size:26px}
+  .form-grid{grid-template-columns:1fr}
+  .calc-preview{grid-template-columns:1fr}
+  .modal-overlay{padding:12px 8px}
+  .table-wrap{border:0;overflow:visible}
+  .vt thead{display:none}
+  .vt,.vt tbody,.vt tr,.vt td,.vt tfoot{display:block;width:100%}
+  .vt tr{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;background:#fff;padding:6px 0}
+  .vt td{border:0;padding:6px 14px;display:flex;justify-content:space-between;gap:12px;text-align:right}
+  .vt td::before{content:attr(data-label);font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.3px;text-align:left;flex:none;max-width:45%}
+  .vt td.num{text-align:right!important}
+  .vt td .row-actions{justify-content:flex-end;min-width:0}
+  .vt td.vname{flex-direction:row}
+  .vt tfoot tr{background:var(--gold-soft)}
+  .vt tfoot td{border:0;background:none}
+  .vt tfoot td:empty{display:none}
+  .st-wrap{overflow-x:auto}
+  .top-list li{flex-direction:column;align-items:flex-start}
+}
+
+/* Print */
+@media print{
+  body{background:#fff}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important;font-size:11px;color:#000}
+  #printArea h1{font-size:24px;color:#1e3a8a;margin-bottom:2px}
+  #printArea h2{font-size:17px;color:#1e3a8a;margin:16px 0 6px;border-bottom:2px solid #c9a227;padding-bottom:3px}
+  #printArea table{width:100%;border-collapse:collapse;margin-bottom:8px;page-break-inside:auto}
+  #printArea tr{page-break-inside:avoid}
+  #printArea th,#printArea td{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}
+  #printArea th{background:#e8edf8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea .num{text-align:right}
+  #printArea tfoot td{font-weight:700;background:#f8f1dc!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4 landscape;margin:12mm}
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="14" r="5.5"/><circle cx="15" cy="14" r="5.5"/><path d="M10.5 5.5 12 3.5l1.5 2L12 7.5z"/></svg>
+      </div>
+      <div>
+        <h1>Wedding Budget &amp; Payment Tracker</h1>
+        <p>Pre-shoot · Wedding · Homecoming — vendors, payments &amp; invoices</p>
+      </div>
+    </div>
+    <div class="header-total" id="headerTotal"></div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Main navigation">
+  <div class="wrap">
+    <button class="tab" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="pre">Pre-shoot Budget</button>
+    <button class="tab" data-view="wed">Wedding &amp; Homecoming</button>
+    <button class="tab" data-view="payments">Payment History</button>
+    <button class="tab" data-view="backup">Export, Backup &amp; Help</button>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <section id="view-dashboard" class="view"></section>
+    <section id="view-pre" class="view"></section>
+    <section id="view-wed" class="view"></section>
+    <section id="view-payments" class="view"></section>
+    <section id="view-backup" class="view"></section>
+  </div>
+</main>
+
+<div id="modalRoot"></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="printArea"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= Constants ================= */
+const SECTIONS = { pre: 'Pre-shoot', wed: 'Wedding & Homecoming' };
+const DEFAULT_CATEGORIES = [
+  'Photography','Videography','Frock','Pre-shoot Dressing','Pre-shoot Location','Photoshoot Location',
+  'Hall / Reception','Decorations','Wedding Card','Jewellery','Wedding Cake','Bridal Dressing',
+  'Groom Attire','Catering','Music / DJ','Transport','Poruwa Ceremony','Flowers','Homecoming',
+  'Favors / Gifts','Makeup & Hair','Other'
+];
+const METHODS = ['Cash','Bank Transfer','Card','Other'];
+const STATUS = {
+  full:    { label: 'Fully Paid',      cls: 'st-full',    rank: 2 },
+  partial: { label: 'Partially Paid',  cls: 'st-partial', rank: 1 },
+  pending: { label: 'Pending Payment', cls: 'st-pending', rank: 0 }
+};
+const ALLOWED_EXT = ['pdf','jpg','jpeg','png'];
+const MAX_FILE_MB = 25;
+
+/* Initial records — values exactly as supplied. [category, vendor, service, estimated, advance, additional] */
+const SEED = {
+  pre: [
+    ['Photography','Untamed Aperture','Photography for pre-shoot',105000,60000,45000],
+    ['Frock','Saphora','Pre-shoot frock',10000,10000,0],
+    ['Pre-shoot Dressing','Salon OM','Pre-shoot dressing and flower bouquet',30500,30500,0],
+    ['Pre-shoot Location','Airforce Museum Rathmalana','Photoshoot location',5000,5000,0],
+    ['Photoshoot Location','Kirala Lake View','Location for pre-shoot',13000,13000,0]
+  ],
+  wed: [
+    ['Hall / Reception','Araliya Red','Reception / hall',1042500,50000,0],
+    ['Decorations','Leave\u2019s','Decorations',200000,5000,0],
+    ['Wedding Card','3932-Order ID','Print 100 wedding cards',5000,1000,0],
+    ['Jewellery','Sri Mangala','Rings + necklace',1010900,100000,0],
+    ['Wedding Cake','Franken Pasyala','Wedding cake for 240',38000,18000,0]
+  ]
+};
+
+/* ================= State ================= */
+const state = {
+  vendors: [], payments: [], attachments: [],
+  meta: { customCategories: [], vendorNames: [], lastBackup: null, seeded: false },
+  view: 'dashboard',
+  ui: {
+    pre: { search:'', cat:'', status:'', sort:'default', dir:1 },
+    wed: { search:'', cat:'', status:'', sort:'default', dir:1 },
+    pay: { search:'', sec:'', type:'', method:'' }
+  }
+};
+
+/* ================= Helpers ================= */
+const $ = (s, r=document) => r.querySelector(s);
+let _uidc = 0;
+const uid = () => Date.now().toString(36) + (_uidc++).toString(36) + Math.random().toString(36).slice(2,7);
+const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const sumAmt = arr => r2(arr.reduce((a,p) => a + (Number(p.amount) || 0), 0));
+const money = n => 'LKR ' + r2(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const todayStr = () => { const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const fmtDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '';
+const fmtDateTime = iso => iso ? new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+const fmtSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(2)+' MB';
+const amountInput = n => (n ? r2(n).toLocaleString('en-US',{maximumFractionDigits:2}) : '');
+const errMsg = e => (e && (e.name === 'QuotaExceededError' ? 'Browser storage is full. Remove some large invoice files or export a backup.' : (e.message || String(e)))) || 'Unknown error';
+
+function parseAmount(s){
+  s = String(s ?? '').replace(/LKR|Rs\.?|,|\s/gi, '');
+  if (s === '') return 0;
+  if (!/^-?(\d+(\.\d+)?|\.\d+)$/.test(s)) return NaN;
+  return r2(Number(s));
+}
+function extOf(name){ const m = /\.([a-z0-9]+)$/i.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
+function guessType(name){ const e = extOf(name); return e === 'pdf' ? 'application/pdf' : e === 'png' ? 'image/png' : (e === 'jpg' || e === 'jpeg') ? 'image/jpeg' : 'application/octet-stream'; }
+const isPdf = a => /pdf/i.test(a.type || '') || extOf(a.name) === 'pdf';
+
+function toast(msg, type='ok'){
+  const el = document.createElement('div');
+  el.className = 'toast ' + type; el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => el.remove(), type === 'err' ? 6000 : 3500);
+}
+function downloadBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+function blobToDataURL(blob){
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); });
+}
+function readBuf(blob){
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsArrayBuffer(blob); });
+}
+function readText(file){
+  return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsText(file); });
+}
+function dataURLToBlob(url){
+  const i = url.indexOf(',');
+  const head = url.slice(0, i), body = url.slice(i+1);
+  const mime = (/data:([^;,]+)/.exec(head) || [,'application/octet-stream'])[1];
+  if (/;base64/i.test(head)) {
+    const bin = atob(body); const arr = new Uint8Array(bin.length);
+    for (let k=0; k<bin.length; k++) arr[k] = bin.charCodeAt(k);
+    return new Blob([arr], { type: mime });
+  }
+  return new Blob([decodeURIComponent(body)], { type: mime });
+}
+
+/* ================= IndexedDB ================= */
+const DB = {
+  db: null,
+  open(){
+    return new Promise((res, rej) => {
+      if (!window.indexedDB) return rej(new Error('This browser does not support IndexedDB storage. Please use Google Chrome.'));
+      const r = indexedDB.open('WeddingBudgetTracker', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if (!d.objectStoreNames.contains('vendors')) d.createObjectStore('vendors', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('payments')) d.createObjectStore('payments', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('attachments')) d.createObjectStore('attachments', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'key' });
+      };
+      r.onsuccess = () => { DB.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => rej(new Error('Storage is blocked by another open tab of this app. Close other tabs and reload.'));
+    });
+  },
+  run(store, mode, fn){
+    return new Promise((res, rej) => {
+      const t = DB.db.transaction(store, mode);
+      const q = fn(t.objectStore(store));
+      let out;
+      if (q) q.onsuccess = () => { out = q.result; };
+      t.oncomplete = () => res(out);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error || new Error('Storage transaction aborted'));
+    });
+  },
+  all(s){ return DB.run(s, 'readonly', st => st.getAll()); },
+  put(s, o){ return DB.run(s, 'readwrite', st => st.put(o)); },
+  del(s, id){ return DB.run(s, 'readwrite', st => st.delete(id)); },
+  clear(s){ return DB.run(s, 'readwrite', st => st.clear()); },
+  putMany(s, arr){
+    return new Promise((res, rej) => {
+      const t = DB.db.transaction(s, 'readwrite'); const st = t.objectStore(s);
+      arr.forEach(o => st.put(o));
+      t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Storage transaction aborted'));
+    });
+  }
+};
+
+async function loadAll(){
+  state.vendors = await DB.all('vendors');
+  state.payments = await DB.all('payments');
+  state.attachments = await DB.all('attachments');
+  const m = (await DB.all('meta')).find(x => x.key === 'settings');
+  if (m && m.value) Object.assign(state.meta, m.value);
+}
+function saveMeta(){ return DB.put('meta', { key: 'settings', value: { ...state.meta } }); }
+
+async function seedData(){
+  const now = new Date().toISOString();
+  const vendors = [], payments = [];
+  let order = 0;
+  for (const sec of ['pre','wed']) {
+    for (const [cat, name, svc, est, adv, extra] of SEED[sec]) {
+      const id = uid();
+      vendors.push({ id, section: sec, category: cat, vendorName: name, service: svc, estimatedCost: est,
+        notes: '', reminder: '', dueDate: '', order: order++, createdAt: now, updatedAt: now });
+      if (adv > 0) payments.push({ id: uid(), vendorId: id, type: 'advance', amount: adv, date: '', method: '',
+        notes: 'Advance (from initial budget record)', createdAt: now });
+      if (extra > 0) payments.push({ id: uid(), vendorId: id, type: 'additional', amount: extra, date: '', method: '',
+        notes: 'Remaining balance paid (from initial budget record)', createdAt: now });
+    }
+  }
+  await DB.putMany('vendors', vendors);
+  await DB.putMany('payments', payments);
+  state.meta.seeded = true;
+  await saveMeta();
+}
+
+/* ================= Calculations ================= */
+function calc(v){
+  const ps = state.payments.filter(p => p.vendorId === v.id);
+  const est = r2(v.estimatedCost);
+  const adv = sumAmt(ps.filter(p => p.type === 'advance'));
+  const paid = sumAmt(ps);                 // Total Paid = Advance + all additional payments
+  const rem = r2(est - paid);              // Remaining = Estimated - Total Paid
+  let status;
+  if (paid <= 0) status = 'pending';
+  else if (paid >= est) status = 'full';   // Fully Paid when Total Paid >= Estimated
+  else status = 'partial';
+  return { ps, est, adv, paid, rem, status, over: rem < 0 ? r2(-rem) : 0 };
+}
+function totals(list){
+  const t = { est:0, adv:0, paid:0, rem:0, over:0, full:0, partial:0, pending:0, count:list.length };
+  list.forEach(v => { const c = calc(v); t.est += c.est; t.adv += c.adv; t.paid += c.paid; if (c.rem > 0) t.rem += c.rem; t.over += c.over; t[c.status]++; });
+  ['est','adv','paid','rem','over'].forEach(k => t[k] = r2(t[k]));
+  t.pct = t.est > 0 ? Math.min(100, t.paid / t.est * 100) : 0;
+  return t;
+}
+const bySec = sec => state.vendors.filter(v => v.section === sec).sort((a,b) => (a.order ?? 0) - (b.order ?? 0) || String(a.createdAt).localeCompare(String(b.createdAt)));
+const attachmentsFor = vid => state.attachments.filter(a => a.vendorId === vid).sort((a,b) => String(a.uploadedAt).localeCompare(String(b.uploadedAt)));
+const sortPays = ps => ps.slice().sort((a,b) => {
+  if (!a.date && b.date) return -1; if (a.date && !b.date) return 1;
+  return String(a.date).localeCompare(String(b.date)) || (a.type === 'advance' ? -1 : 0) - (b.type === 'advance' ? -1 : 0) || String(a.createdAt).localeCompare(String(b.createdAt));
+});
+const nextOrder = () => state.vendors.reduce((m,v) => Math.max(m, v.order ?? 0), -1) + 1;
+const pill = st => `<span class="pill ${STATUS[st].cls}">${STATUS[st].label}</span>`;
+const remHTML = c => c.rem < 0 ? `<span class="over">Overpaid ${money(c.over)}</span>` : money(c.rem);
+
+function categoriesAll(){
+  return [...new Set([...DEFAULT_CATEGORIES, ...state.meta.customCategories, ...state.vendors.map(v => v.category)].filter(Boolean))].sort((a,b) => a.localeCompare(b));
+}
+function vendorNamesAll(){
+  return [...new Set([...state.meta.vendorNames, ...state.vendors.map(v => v.vendorName)].filter(Boolean))].sort((a,b) => a.localeCompare(b));
+}
+function dueInfo(v, c){
+  if (!v.dueDate || c.rem <= 0) return null;
+  const d = Math.round((new Date(v.dueDate+'T00:00:00') - new Date(todayStr()+'T00:00:00')) / 864e5);
+  if (d < 0) return { cls:'overdue', text:`Overdue by ${-d} day${-d === 1 ? '' : 's'}`, d };
+  if (d === 0) return { cls:'soon', text:'Due today', d };
+  if (d <= 7) return { cls:'soon', text:`Due in ${d} day${d === 1 ? '' : 's'}`, d };
+  return { cls:'later', text:'Due ' + fmtDate(v.dueDate), d };
+}
+function categorySummary(){
+  const map = new Map();
+  for (const sec of ['pre','wed']) for (const v of bySec(sec)) {
+    const k = sec + '|' + v.category; const c = calc(v);
+    if (!map.has(k)) map.set(k, { sec, category: v.category, count:0, est:0, adv:0, paid:0, rem:0 });
+    const g = map.get(k); g.count++; g.est = r2(g.est + c.est); g.adv = r2(g.adv + c.adv); g.paid = r2(g.paid + c.paid); g.rem = r2(g.rem + Math.max(0, c.rem));
+  }
+  return [...map.values()];
+}
+
+/* ================= Modals ================= */
+function openModal({ title, body, footer = '', size = '' }){
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.innerHTML = `<div class="modal ${size}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="modal-head"><h3>${esc(title)}</h3><button type="button" class="icon-btn close-x" aria-label="Close">&times;</button></div>
+    <div class="modal-body">${body}</div>${footer ? `<div class="modal-foot">${footer}</div>` : ''}</div>`;
+  $('#modalRoot').appendChild(ov);
+  document.body.classList.add('modal-open');
+  let closed = false;
+  ov.close = () => {
+    if (closed) return; closed = true;
+    ov.dispatchEvent(new Event('modalclose'));
+    ov.remove();
+    if (!$('#modalRoot').children.length) document.body.classList.remove('modal-open');
+  };
+  ov.querySelector('.close-x').onclick = ov.close;
+  return ov;
+}
+function confirmDialog(message, { title = 'Please confirm', ok = 'Confirm', danger = false } = {}){
+  return new Promise(res => {
+    const m = openModal({ title, size: 'sm', body: `<div class="confirm-msg">${message}</div>`,
+      footer: `<button type="button" class="btn ghost" data-x>Cancel</button><button type="button" class="btn ${danger ? 'danger' : 'primary'}" data-ok>${esc(ok)}</button>` });
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    m.addEventListener('modalclose', () => fin(false));
+    m.querySelector('[data-x]').onclick = () => m.close();
+    m.querySelector('[data-ok]').onclick = () => { fin(true); m.close(); };
+    setTimeout(() => m.querySelector('[data-ok]').focus(), 30);
+  });
+}
+function infoDialog(title, html){
+  const m = openModal({ title, size: 'sm', body: html, footer: '<button type="button" class="btn primary" data-x>OK</button>' });
+  m.querySelector('[data-x]').onclick = () => m.close();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { const all = $('#modalRoot').children; if (all.length) all[all.length-1].close(); }
+});
+
+/* ================= File handling ================= */
+function validateFiles(list){
+  const files = [], errors = [];
+  [...(list || [])].forEach(f => {
+    if (!ALLOWED_EXT.includes(extOf(f.name))) errors.push(`"${f.name}" is not allowed. Use PDF, JPG, JPEG or PNG.`);
+    else if (f.size > MAX_FILE_MB * 1048576) errors.push(`"${f.name}" is larger than ${MAX_FILE_MB} MB.`);
+    else if (f.size === 0) errors.push(`"${f.name}" is empty.`);
+    else files.push(f);
+  });
+  return { files, errors };
+}
+async function saveFile(file, vendorId, paymentId){
+  const type = file.type || guessType(file.name);
+  const att = { id: uid(), vendorId, paymentId: paymentId || null, name: file.name, type, size: file.size,
+    uploadedAt: new Date().toISOString(), blob: new Blob([file], { type }) };
+  await DB.put('attachments', att);
+}
+function downloadAttachment(aid){
+  const a = state.attachments.find(x => x.id === aid);
+  if (!a) return toast('Attachment not found', 'err');
+  downloadBlob(a.blob, a.name);
+}
+function openPreview(aid){
+  const a = state.attachments.find(x => x.id === aid);
+  if (!a) return toast('Attachment not found', 'err');
+  const url = URL.createObjectURL(a.blob);
+  const body = isPdf(a)
+    ? `<iframe class="preview-frame" src="${url}" title="${esc(a.name)}"></iframe><p class="muted" style="margin:8px 0 0;font-size:12.5px">If the PDF does not show here, use <b>Open in new tab</b> or <b>Download</b>.</p>`
+    : `<div class="preview-img"><img src="${url}" alt="${esc(a.name)}"></div>`;
+  const m = openModal({ title: a.name, size: 'xl', body,
+    footer: `<span class="muted">${esc(fmtSize(a.size))} · uploaded ${esc(fmtDateTime(a.uploadedAt))}</span>
+      <a class="btn ghost" href="${url}" target="_blank" rel="noopener">Open in new tab</a>
+      <button type="button" class="btn primary" data-dl>Download</button>` });
+  m.querySelector('[data-dl]').onclick = () => downloadAttachment(aid);
+  m.addEventListener('modalclose', () => setTimeout(() => URL.revokeObjectURL(url), 60000));
+}
+function attRow(a, { removable = false, linkLabel = '' } = {}){
+  return `<div class="att">
+    <div class="fi ${isPdf(a) ? 'pdf' : 'img'}">${isPdf(a) ? 'PDF' : extOf(a.name).toUpperCase()}</div>
+    <div class="meta"><div>${esc(a.name)}</div><small>${esc(fmtSize(a.size))} · uploaded ${esc(fmtDateTime(a.uploadedAt))}${linkLabel ? ' · ' + esc(linkLabel) : ''}</small></div>
+    <div class="acts">
+      <button type="button" class="btn ghost sm" data-att="prev" data-aid="${a.id}">Preview</button>
+      <button type="button" class="btn ghost sm" data-att="dl" data-aid="${a.id}">Download</button>
+      ${removable ? `<button type="button" class="btn danger-ghost sm" data-att="rm" data-aid="${a.id}">Remove</button>` : ''}
+    </div></div>`;
+}
+function paymentLabel(pid){
+  const p = state.payments.find(x => x.id === pid);
+  if (!p) return 'Vendor file';
+  return `${p.type === 'advance' ? 'Advance' : 'Payment'} ${money(p.amount)}${p.date ? ' on ' + fmtDate(p.date) : ''}`;
+}
+
+/* ================= Navigation ================= */
+function showView(name){
+  if (!document.getElementById('view-' + name)) name = 'dashboard';
+  state.view = name;
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + name));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  try { localStorage.setItem('wbt-view', name); } catch (e) {}
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showView(t.dataset.view)));
+
+/* ================= Rendering ================= */
+function card(label, value, sub, cls=''){
+  return `<div class="card ${cls}"><div class="label">${esc(label)}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+}
+function storageNotice(){
+  const lb = state.meta.lastBackup ? fmtDateTime(state.meta.lastBackup) : 'never';
+  return `<div class="notice"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    <div class="grow">Your budget and invoices are stored <b>only in this browser on this device</b> — nothing is uploaded anywhere. Clearing browser data or switching browser/device will hide them, so <b>download a backup regularly</b>. Last backup: <b>${esc(lb)}</b>.</div>
+    <button type="button" class="btn ghost sm" data-backup-now>Back up now</button></div>`;
+}
+
+function renderHeader(){
+  const t = totals(state.vendors);
+  $('#headerTotal').innerHTML = `<small>Paid so far</small><strong><em>${money(t.paid)}</em> of ${money(t.est)}</strong>`;
+}
+
+function renderDashboard(){
+  const all = totals(state.vendors), pre = totals(bySec('pre')), wed = totals(bySec('wed'));
+  const items = state.vendors.map(v => ({ v, c: calc(v) }));
+  const alerts = items.map(x => ({ ...x, d: dueInfo(x.v, x.c) })).filter(x => x.d && x.d.cls !== 'later').sort((a,b) => a.d.d - b.d.d);
+  const top = items.filter(x => x.c.rem > 0).sort((a,b) => b.c.rem - a.c.rem).slice(0, 6);
+  const cats = categorySummary().sort((a,b) => b.est - a.est);
+  const maxEst = Math.max(1, ...cats.map(c => c.est));
+  const reminders = items.filter(x => (x.v.reminder || x.v.dueDate) && x.c.rem > 0)
+    .sort((a,b) => (a.v.dueDate || '9999').localeCompare(b.v.dueDate || '9999'));
+
+  const secCard = (sec, t) => `<div class="panel sec-card">
+    <div class="panel-head"><h3>${SECTIONS[sec]}</h3><button type="button" class="btn ghost sm" data-go="${sec}">Open →</button></div>
+    <div class="progress"><span style="width:${t.pct.toFixed(1)}%"></span></div>
+    <div class="progress-row"><span>${t.pct.toFixed(1)}% paid</span><span>${t.full} of ${t.count} fully paid</span></div>
+    <div class="rows">
+      <span>Estimated budget</span><b>${money(t.est)}</b>
+      <span>Advance paid</span><b>${money(t.adv)}</b>
+      <span>Total paid</span><b>${money(t.paid)}</b>
+      <span>Remaining balance</span><b>${money(t.rem)}</b>
+    </div></div>`;
+
+  $('#view-dashboard').innerHTML = `
+  ${storageNotice()}
+  <div class="page-head">
+    <div><h2>Combined Dashboard</h2><p class="muted">Pre-shoot + Wedding &amp; Homecoming together</p></div>
+    <div class="head-actions">
+      <button type="button" class="btn ghost" data-print>Print Report</button>
+      <button type="button" class="btn gold" data-exp="combined">Export Combined Excel</button>
+      <button type="button" class="btn primary" data-add>+ Add Vendor</button>
+    </div>
+  </div>
+  <div class="cards">
+    ${card('Total Estimated Budget', money(all.est), `${all.count} vendor service${all.count === 1 ? '' : 's'}`)}
+    ${card('Total Advance Paid', money(all.adv), 'Already included in Total Paid', 'c-gold')}
+    ${card('Total Paid', money(all.paid), `${all.full} fully paid`, 'c-green')}
+    ${card('Total Outstanding Balance', money(all.rem), `${all.partial + all.pending} still have a balance${all.over ? ` · <span class="over">overpaid ${money(all.over)}</span>` : ''}`, 'c-red')}
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Overall Payment Progress</h3><span class="big-pct">${all.pct.toFixed(1)}%</span></div>
+    <div class="progress gold"><span style="width:${all.pct.toFixed(1)}%"></span></div>
+    <div class="progress-row"><span>Paid ${money(all.paid)}</span><span>Remaining ${money(all.rem)}</span><span>Budget ${money(all.est)}</span></div>
+  </div>
+  ${alerts.length ? `<div class="alert-list">${alerts.map(x => `<div class="alert ${x.d.cls}"><span><b>${esc(x.v.vendorName)}</b> — ${esc(x.v.service || x.v.category)}: ${esc(x.d.text)} (${esc(fmtDate(x.v.dueDate))}) · balance ${money(x.c.rem)}</span><button type="button" class="btn ghost sm" data-act="pay" data-id="${x.v.id}">Add Payment</button></div>`).join('')}</div>` : ''}
+  <div class="grid-2">${secCard('pre', pre)}${secCard('wed', wed)}</div>
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Payment Progress Chart</h3>
+      <div class="legend"><span><i style="background:var(--blue)"></i>Paid</span><span><i style="background:var(--blue-100)"></i>Estimated cost</span></div>
+      ${cats.length ? cats.map(c => `<div class="chart-row">
+        <div class="cl"><b>${esc(c.category)} <span class="tag ${c.sec === 'pre' ? 'gold' : ''}">${c.sec === 'pre' ? 'Pre-shoot' : 'Wedding'}</span></b><span class="muted">${money(c.paid)} / ${money(c.est)}</span></div>
+        <div class="chart-track"><div class="chart-est" style="width:${(c.est / maxEst * 100).toFixed(2)}%"></div><div class="chart-paid" style="width:${(Math.min(c.paid, c.est || c.paid) / maxEst * 100).toFixed(2)}%"></div></div>
+      </div>`).join('') : emptyBlock('No data yet', 'Add vendors to see the chart.')}
+    </div>
+    <div class="panel">
+      <h3>Highest Outstanding Balances</h3>
+      ${top.length ? `<ul class="top-list">${top.map(x => `<li><div class="t"><div>${esc(x.v.vendorName)}</div><small>${esc(x.v.service || x.v.category)} · ${SECTIONS[x.v.section]}</small></div><div style="display:flex;gap:8px;align-items:center"><span class="amt">${money(x.c.rem)}</span><button type="button" class="ab pay" data-act="pay" data-id="${x.v.id}">+ Pay</button></div></li>`).join('')}</ul>`
+        : emptyBlock('Everything is paid', 'No outstanding balances.')}
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Category-wise Budget Summary</h3>
+    ${cats.length ? `<div class="st-wrap"><table class="st"><thead><tr><th>Section</th><th>Category</th><th class="num">Services</th><th class="num">Estimated</th><th class="num">Advance</th><th class="num">Total Paid</th><th class="num">Remaining</th><th class="num">% Paid</th></tr></thead><tbody>
+      ${cats.map(c => `<tr><td>${SECTIONS[c.sec]}</td><td>${esc(c.category)}</td><td class="num">${c.count}</td><td class="num">${money(c.est)}</td><td class="num">${money(c.adv)}</td><td class="num">${money(c.paid)}</td><td class="num">${money(c.rem)}</td><td class="num">${c.est > 0 ? Math.min(100, c.paid / c.est * 100).toFixed(1) + '%' : '—'}</td></tr>`).join('')}
+      </tbody><tfoot><tr><td colspan="2">TOTAL</td><td class="num">${all.count}</td><td class="num">${money(all.est)}</td><td class="num">${money(all.adv)}</td><td class="num">${money(all.paid)}</td><td class="num">${money(all.rem)}</td><td class="num">${all.pct.toFixed(1)}%</td></tr></tfoot></table></div>`
+      : emptyBlock('No categories yet', 'Add a vendor to start.')}
+  </div>
+  <div class="panel">
+    <h3>Upcoming Payments &amp; Reminders</h3>
+    ${reminders.length ? `<ul class="top-list">${reminders.map(x => { const d = dueInfo(x.v, x.c); return `<li><div class="t"><div>${esc(x.v.vendorName)} <span class="muted" style="font-weight:400">· ${esc(x.v.service || x.v.category)}</span></div><small>${x.v.reminder ? esc(x.v.reminder) : 'No reminder note'}${d ? ` · <span class="due ${d.cls}">${esc(d.text)}</span>` : ''}</small></div><div style="display:flex;gap:8px;align-items:center"><span class="amt">${money(x.c.rem)}</span><button type="button" class="ab" data-act="edit" data-id="${x.v.id}">Edit</button></div></li>`; }).join('')}</ul>`
+      : emptyBlock('No reminders', 'Add a due date or reminder note when editing a vendor and it will appear here.')}
+  </div>`;
+}
+function emptyBlock(title, text, btn=''){
+  return `<div class="empty"><div class="ei">✦</div><h4>${esc(title)}</h4><p>${esc(text)}</p>${btn}</div>`;
+}
+
+/* ---------- Section views ---------- */
+function initSection(sec){
+  const other = sec === 'pre' ? 'wed' : 'pre';
+  $('#view-' + sec).innerHTML = `
+  <div class="page-head">
+    <div><h2>${SECTIONS[sec]} Budget</h2><p class="muted">${sec === 'pre' ? 'Pre-shoot vendors, services, payments and invoices' : 'Wedding ceremony, reception, homecoming and related expenses'}</p></div>
+    <div class="head-actions">
+      <button type="button" class="btn ghost" data-go="${other}">⇄ Switch to ${SECTIONS[other]}</button>
+      <button type="button" class="btn gold" data-exp="${sec}">Export Excel</button>
+      <button type="button" class="btn primary" data-add="${sec}">+ Add Vendor</button>
+    </div>
+  </div>
+  <div class="cards" id="${sec}-stats"></div>
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" class="input" id="${sec}-search" placeholder="Search vendor, service, category or notes…" aria-label="Search">
+      <select class="input" id="${sec}-cat" aria-label="Category filter"></select>
+      <select class="input" id="${sec}-status" aria-label="Status filter">
+        <option value="">All statuses</option><option value="pending">Unpaid (Pending)</option><option value="partial">Partially Paid</option><option value="full">Fully Paid</option><option value="due">Has balance due</option>
+      </select>
+      <select class="input" id="${sec}-sort" aria-label="Sort by">
+        <option value="default">Sort: Order added</option><option value="name">Sort: Vendor name</option><option value="category">Sort: Category</option><option value="est">Sort: Estimated cost</option><option value="rem">Sort: Remaining balance</option><option value="status">Sort: Payment status</option>
+      </select>
+      <button type="button" class="btn ghost" id="${sec}-dir" title="Toggle ascending / descending">↑ Ascending</button>
+    </div>
+    <div class="table-wrap"><table class="vt">
+      <thead><tr><th>#</th><th class="sortable" data-sort="category">Category</th><th class="sortable" data-sort="name">Vendor Name</th><th>Service / Description</th><th class="num sortable" data-sort="est">Estimated Cost</th><th class="num">Advance Paid</th><th class="num">Total Paid</th><th class="num sortable" data-sort="rem">Remaining Balance</th><th class="sortable" data-sort="status">Payment Status</th><th>Invoice / Receipt</th><th>Actions</th></tr></thead>
+      <tbody id="${sec}-tbody"></tbody><tfoot id="${sec}-tfoot"></tfoot>
+    </table></div>
+    <div id="${sec}-empty"></div>
+  </div>`;
+  const ui = state.ui[sec];
+  $('#' + sec + '-search').addEventListener('input', e => { ui.search = e.target.value; renderSection(sec); });
+  $('#' + sec + '-cat').addEventListener('change', e => { ui.cat = e.target.value; renderSection(sec); });
+  $('#' + sec + '-status').addEventListener('change', e => { ui.status = e.target.value; renderSection(sec); });
+  $('#' + sec + '-sort').addEventListener('change', e => { ui.sort = e.target.value; renderSection(sec); });
+  $('#' + sec + '-dir').addEventListener('click', () => { ui.dir *= -1; renderSection(sec); });
+  $('#view-' + sec).querySelectorAll('th[data-sort]').forEach(th => th.addEventListener('click', () => {
+    if (ui.sort === th.dataset.sort) ui.dir *= -1; else { ui.sort = th.dataset.sort; ui.dir = 1; }
+    $('#' + sec + '-sort').value = ui.sort; renderSection(sec);
+  }));
+}
+
+function renderSection(sec){
+  const ui = state.ui[sec];
+  const list = bySec(sec);
+  const t = totals(list);
+  $('#' + sec + '-stats').innerHTML =
+    card('Estimated Budget', money(t.est), `${t.count} service${t.count === 1 ? '' : 's'}`) +
+    card('Advance Paid', money(t.adv), 'Included in Total Paid', 'c-gold') +
+    card('Total Paid', money(t.paid), `${t.pct.toFixed(1)}% of budget`, 'c-green') +
+    card('Remaining Balance', money(t.rem), t.over ? `<span class="over">Overpaid ${money(t.over)}</span>` : 'Outstanding to vendors', 'c-red') +
+    card('Fully Paid', `${t.full} <span class="muted" style="font-size:15px;font-weight:500">of ${t.count}</span>`, `${t.partial} partial · ${t.pending} pending`);
+
+  // category filter options
+  const catSel = $('#' + sec + '-cat');
+  const cats = [...new Set(list.map(v => v.category))].sort((a,b) => a.localeCompare(b));
+  if (ui.cat && !cats.includes(ui.cat)) ui.cat = '';
+  catSel.innerHTML = `<option value="">All categories</option>` + cats.map(c => `<option ${c === ui.cat ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  $('#' + sec + '-dir').textContent = ui.dir === 1 ? '↑ Ascending' : '↓ Descending';
+  $('#' + sec + '-status').value = ui.status;
+
+  const q = ui.search.trim().toLowerCase();
+  let rows = list.map(v => ({ v, c: calc(v) })).filter(({ v, c }) => {
+    if (ui.cat && v.category !== ui.cat) return false;
+    if (ui.status === 'due') { if (c.rem <= 0) return false; }
+    else if (ui.status && c.status !== ui.status) return false;
+    if (q) { const hay = [v.category, v.vendorName, v.service, v.notes, v.reminder].join(' ').toLowerCase(); if (!hay.includes(q)) return false; }
+    return true;
+  });
+  const cmp = {
+    name: (a,b) => a.v.vendorName.localeCompare(b.v.vendorName),
+    category: (a,b) => a.v.category.localeCompare(b.v.category) || a.v.vendorName.localeCompare(b.v.vendorName),
+    est: (a,b) => a.c.est - b.c.est,
+    rem: (a,b) => a.c.rem - b.c.rem,
+    status: (a,b) => STATUS[a.c.status].rank - STATUS[b.c.status].rank || a.v.vendorName.localeCompare(b.v.vendorName),
+    default: (a,b) => (a.v.order ?? 0) - (b.v.order ?? 0)
+  }[ui.sort] || ((a,b) => 0);
+  rows.sort((a,b) => cmp(a,b) * ui.dir);
+
+  $('#' + sec + '-tbody').innerHTML = rows.map(({ v, c }, i) => {
+    const d = dueInfo(v, c);
+    const nAtt = attachmentsFor(v.id).length;
+    const others = state.vendors.filter(x => x.vendorName.toLowerCase() === v.vendorName.toLowerCase()).length;
+    return `<tr>
+      <td data-label="#">${i + 1}</td>
+      <td data-label="Category">${esc(v.category)}</td>
+      <td data-label="Vendor" class="vname"><div><strong>${esc(v.vendorName)}</strong>${others > 1 ? `<span class="tag">${others} services</span> ` : ''}${d ? `<span class="due ${d.cls}">${esc(d.text)}</span>` : ''}</div></td>
+      <td data-label="Service">${esc(v.service || '—')}</td>
+      <td data-label="Estimated" class="num">${money(c.est)}</td>
+      <td data-label="Advance" class="num">${money(c.adv)}</td>
+      <td data-label="Total Paid" class="num">${money(c.paid)}</td>
+      <td data-label="Remaining" class="num">${remHTML(c)}</td>
+      <td data-label="Status">${pill(c.status)}</td>
+      <td data-label="Invoice">${nAtt ? `<button type="button" class="link" data-act="invoices" data-id="${v.id}">📎 ${nAtt} file${nAtt === 1 ? '' : 's'}</button>` : `<button type="button" class="link muted" data-act="invoices" data-id="${v.id}">+ Upload</button>`}</td>
+      <td data-label="Actions"><div class="row-actions">
+        <button type="button" class="ab" data-act="view" data-id="${v.id}">View</button>
+        <button type="button" class="ab" data-act="edit" data-id="${v.id}">Edit</button>
+        <button type="button" class="ab pay" data-act="pay" data-id="${v.id}">+ Payment</button>
+        <button type="button" class="ab" data-act="history" data-id="${v.id}">History</button>
+        <button type="button" class="ab" data-act="invoices" data-id="${v.id}">Invoices</button>
+        <button type="button" class="ab" data-act="move" data-id="${v.id}" title="Move to ${SECTIONS[sec === 'pre' ? 'wed' : 'pre']}">Move</button>
+        <button type="button" class="ab del" data-act="delete" data-id="${v.id}">Delete</button>
+      </div></td></tr>`;
+  }).join('');
+
+  const shown = totals(rows.map(r => r.v));
+  $('#' + sec + '-tfoot').innerHTML = rows.length ? `<tr><td></td><td data-label="">${rows.length === list.length ? 'TOTAL' : 'TOTAL (filtered)'}</td><td></td><td></td>
+    <td class="num" data-label="Estimated">${money(shown.est)}</td><td class="num" data-label="Advance">${money(shown.adv)}</td><td class="num" data-label="Total Paid">${money(shown.paid)}</td><td class="num" data-label="Remaining">${money(shown.rem)}</td><td></td><td></td><td></td></tr>` : '';
+
+  const emptyEl = $('#' + sec + '-empty');
+  if (!list.length) emptyEl.innerHTML = emptyBlock(`No ${SECTIONS[sec]} vendors yet`, 'Add your first vendor to start tracking costs and payments.', `<button type="button" class="btn primary" data-add="${sec}">+ Add Vendor</button>`);
+  else if (!rows.length) emptyEl.innerHTML = emptyBlock('No vendors match your filters', 'Try a different search or clear the filters.', `<button type="button" class="btn ghost" data-clear="${sec}">Clear filters</button>`);
+  else emptyEl.innerHTML = '';
+}
+
+/* ---------- Payment history view ---------- */
+function initPayments(){
+  $('#view-payments').innerHTML = `
+  <div class="page-head">
+    <div><h2>Payment Transaction History</h2><p class="muted">Every advance and payment across both sections</p></div>
+    <div class="head-actions">
+      <button type="button" class="btn ghost" data-zip>Download All Invoices (.zip)</button>
+      <button type="button" class="btn gold" data-exp="payments">Export Payment History</button>
+    </div>
+  </div>
+  <div class="cards" id="pay-stats"></div>
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" class="input" id="pay-search" placeholder="Search vendor, service, notes…" aria-label="Search payments">
+      <select class="input" id="pay-sec"><option value="">Both sections</option><option value="pre">Pre-shoot</option><option value="wed">Wedding &amp; Homecoming</option></select>
+      <select class="input" id="pay-type"><option value="">All payment types</option><option value="advance">Advance</option><option value="additional">Additional payment</option></select>
+      <select class="input" id="pay-method"><option value="">All methods</option>${METHODS.map(m => `<option>${m}</option>`).join('')}<option value="__none">Not recorded</option></select>
+    </div>
+    <div class="table-wrap"><table class="vt">
+      <thead><tr><th>Date</th><th>Section</th><th>Category</th><th>Vendor</th><th>Service</th><th>Type</th><th class="num">Amount</th><th>Method</th><th>Notes</th><th>Receipt</th><th>Actions</th></tr></thead>
+      <tbody id="pay-tbody"></tbody><tfoot id="pay-tfoot"></tfoot>
+    </table></div>
+    <div id="pay-empty"></div>
+  </div>`;
+  const ui = state.ui.pay;
+  $('#pay-search').addEventListener('input', e => { ui.search = e.target.value; renderPayments(); });
+  $('#pay-sec').addEventListener('change', e => { ui.sec = e.target.value; renderPayments(); });
+  $('#pay-type').addEventListener('change', e => { ui.type = e.target.value; renderPayments(); });
+  $('#pay-method').addEventListener('change', e => { ui.method = e.target.value; renderPayments(); });
+}
+function renderPayments(){
+  const ui = state.ui.pay;
+  const vmap = new Map(state.vendors.map(v => [v.id, v]));
+  const q = ui.search.trim().toLowerCase();
+  let rows = state.payments.filter(p => vmap.has(p.vendorId)).map(p => ({ p, v: vmap.get(p.vendorId) })).filter(({ p, v }) => {
+    if (ui.sec && v.section !== ui.sec) return false;
+    if (ui.type && p.type !== ui.type) return false;
+    if (ui.method === '__none' ? !!p.method : (ui.method && p.method !== ui.method)) return false;
+    if (q && ![v.vendorName, v.service, v.category, p.notes].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  rows.sort((a,b) => (b.p.date || '').localeCompare(a.p.date || '') || String(b.p.createdAt).localeCompare(String(a.p.createdAt)));
+  const total = sumAmt(rows.map(r => r.p));
+  const adv = sumAmt(rows.filter(r => r.p.type === 'advance').map(r => r.p));
+  $('#pay-stats').innerHTML = card('Transactions', String(rows.length), 'Matching current filters') + card('Total Amount', money(total), 'Advances + payments', 'c-green') + card('Advances', money(adv), '', 'c-gold') + card('Additional Payments', money(r2(total - adv)), '');
+  $('#pay-tbody').innerHTML = rows.map(({ p, v }) => {
+    const atts = state.attachments.filter(a => a.paymentId === p.id);
+    return `<tr>
+      <td data-label="Date">${p.date ? esc(fmtDate(p.date)) : '<span class="muted">Not recorded</span>'}</td>
+      <td data-label="Section">${SECTIONS[v.section]}</td>
+      <td data-label="Category">${esc(v.category)}</td>
+      <td data-label="Vendor"><strong>${esc(v.vendorName)}</strong></td>
+      <td data-label="Service">${esc(v.service || '—')}</td>
+      <td data-label="Type"><span class="tag ${p.type === 'advance' ? 'gold' : ''}">${p.type === 'advance' ? 'Advance' : 'Payment'}</span></td>
+      <td data-label="Amount" class="num">${money(p.amount)}</td>
+      <td data-label="Method">${esc(p.method || '—')}</td>
+      <td data-label="Notes">${esc(p.notes || '')}</td>
+      <td data-label="Receipt">${atts.length ? atts.map(a => `<button type="button" class="link" data-att="prev" data-aid="${a.id}">📎 ${esc(a.name)}</button>`).join('<br>') : '—'}</td>
+      <td data-label="Actions"><div class="row-actions" style="min-width:0"><button type="button" class="ab" data-act="history" data-id="${v.id}">Vendor history</button></div></td></tr>`;
+  }).join('');
+  $('#pay-tfoot').innerHTML = rows.length ? `<tr><td data-label="">TOTAL</td><td></td><td></td><td></td><td></td><td></td><td class="num" data-label="Amount">${money(total)}</td><td></td><td></td><td></td><td></td></tr>` : '';
+  $('#pay-empty').innerHTML = rows.length ? '' : emptyBlock(state.payments.length ? 'No payments match your filters' : 'No payments recorded yet', state.payments.length ? 'Try clearing the filters.' : 'Use “+ Payment” on any vendor to record a payment.');
+}
+
+/* ---------- Backup / export / help view ---------- */
+async function renderBackup(){
+  const lb = state.meta.lastBackup ? fmtDateTime(state.meta.lastBackup) : 'Never';
+  const attSize = state.attachments.reduce((a,x) => a + (x.size || 0), 0);
+  $('#view-backup').innerHTML = `
+  <div class="page-head"><div><h2>Export, Backup &amp; Help</h2><p class="muted">Download Excel workbooks, back up everything, and restore it later</p></div></div>
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Excel Downloads</h3>
+      <p class="muted" style="margin-top:0">Exports include <b>all saved records</b> (not just filtered rows), with totals, LKR formatting, filters and a frozen header row.</p>
+      <div class="btn-stack">
+        <button type="button" class="btn gold" data-exp="combined">Combined Wedding Budget</button>
+        <button type="button" class="btn ghost" data-exp="pre">Pre-shoot Budget</button>
+        <button type="button" class="btn ghost" data-exp="wed">Wedding &amp; Homecoming Budget</button>
+        <button type="button" class="btn ghost" data-exp="payments">Payment Transaction History</button>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin-bottom:0">Invoices are listed by filename in the workbook. Download the original files separately below.</p>
+    </div>
+    <div class="panel">
+      <h3>Backup &amp; Restore</h3>
+      <div class="kv"><span>Last backup</span><b>${esc(lb)}</b><span>Vendor services</span><b>${state.vendors.length}</b><span>Payments</span><b>${state.payments.length}</b><span>Invoice files</span><b>${state.attachments.length} (${fmtSize(attSize)})</b><span>Browser storage</span><b id="storageEst">checking…</b></div>
+      <div class="btn-stack">
+        <button type="button" class="btn primary" data-backup-now>Download Full Backup (.json)</button>
+        <label class="btn ghost" style="cursor:pointer">Restore from Backup…<input type="file" id="restoreInput" accept=".json,application/json" hidden></label>
+      </div>
+      <p class="muted" style="font-size:12.5px;margin-bottom:0">The backup file contains all vendors, payments, settings <b>and invoice files</b>. Keep it somewhere safe (e.g. Google Drive or a USB drive).</p>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <h3>Reports &amp; Invoice Files</h3>
+      <div class="btn-stack">
+        <button type="button" class="btn ghost" data-print>Print Budget Report</button>
+        <button type="button" class="btn ghost" data-zip>Download All Invoices (.zip)</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Reset</h3>
+      <p class="muted" style="margin-top:0">Deletes <b>everything</b> in this browser (including your own vendors, payments and invoices) and reloads the original budget records.</p>
+      <button type="button" class="btn danger-ghost" data-reset>Reset Demo Data</button>
+    </div>
+  </div>
+  <div class="panel help">
+    <h3>How to Use</h3>
+    <p class="subhead">Save &amp; open in Chrome</p>
+    <ol>
+      <li>Save this file as <b>index.html</b> in a permanent folder (e.g. Documents\\Wedding Budget). Do not keep it only in Downloads.</li>
+      <li>Right-click the file → <b>Open with</b> → <b>Google Chrome</b> (or drag it into a Chrome window).</li>
+      <li>Bookmark the page (Ctrl+D). Always open the <b>same file from the same location in the same browser</b> — your data is linked to that.</li>
+      <li>An internet connection is needed for the Excel feature and fonts (loaded from a CDN). Everything else works offline.</li>
+    </ol>
+    <p class="subhead">Export Excel</p>
+    <ol>
+      <li>Click <b>Export Excel</b> on a section page, or use the buttons above for the Combined workbook or Payment History.</li>
+      <li>The .xlsx file downloads instantly — open it in Excel or Google Sheets. The combined workbook has 5 sheets: Dashboard Summary, Pre-shoot Vendors, Wedding &amp; Homecoming Vendors, Payment History, Category Summary.</li>
+    </ol>
+    <p class="subhead">Back up &amp; restore</p>
+    <ol>
+      <li>Click <b>Download Full Backup</b> after every important change (at least weekly). The .json file includes your invoice files.</li>
+      <li>To restore (on this or another computer): open the app → <b>Restore from Backup…</b> → choose the .json file → confirm. Restoring <b>replaces</b> all current data.</li>
+      <li>Clearing Chrome's "Cookies and site data", using Incognito, or switching browsers will not show your saved data — restore from your backup in that case.</li>
+    </ol>
+    <p class="subhead">How amounts are calculated</p>
+    <ol>
+      <li><b>Total Paid</b> = Advance + all additional payments (the advance is counted once, never twice).</li>
+      <li><b>Remaining Balance</b> = Estimated Cost − Total Paid. A vendor is <b>Fully Paid</b> when Total Paid ≥ Estimated Cost.</li>
+    </ol>
+  </div>`;
+  $('#restoreInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) importBackup(f); });
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const el = $('#storageEst'); if (el) el.textContent = `${fmtSize(est.usage || 0)} used of ~${fmtSize(est.quota || 0)}`;
+    } else { const el = $('#storageEst'); if (el) el.textContent = 'not available'; }
+  } catch (e) { const el = $('#storageEst'); if (el) el.textContent = 'not available'; }
+}
+
+function renderAll(){
+  renderHeader();
+  renderDashboard();
+  renderSection('pre');
+  renderSection('wed');
+  renderPayments();
+  renderBackup();
+}
+async function refresh(){ await loadAll(); renderAll(); }
+
+/* ================= Vendor form ================= */
+function openVendorForm({ id = null, section = '', vendorName = '', category = '' } = {}){
+  const v = id ? state.vendors.find(x => x.id === id) : null;
+  if (id && !v) return toast('Record not found', 'err');
+  const c = v ? calc(v) : null;
+  const advPays = c ? c.ps.filter(p => p.type === 'advance') : [];
+  const advLocked = advPays.length > 1;
+  const sec = v ? v.section : (section || (state.view === 'wed' ? 'wed' : 'pre'));
+  const k = uid();
+  const otherPaid = v ? r2(c.paid - c.adv) : 0;
+
+  const body = `<form id="vf-${k}" novalidate>
+    <div class="form-error" hidden></div>
+    <div class="form-grid">
+      <label class="f"><span>Event Section *</span><select name="section">${Object.entries(SECTIONS).map(([key, l]) => `<option value="${key}" ${key === sec ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>${v ? '<small>Change this to move the vendor to the other section</small>' : ''}</label>
+      <label class="f"><span>Category *</span><input name="category" list="dlc-${k}" autocomplete="off" value="${esc(v ? v.category : category)}" placeholder="Choose or type a new category"><small>Pick a suggestion or type your own</small></label>
+      <label class="f"><span>Vendor Name *</span><input name="vendorName" list="dlv-${k}" autocomplete="off" value="${esc(v ? v.vendorName : vendorName)}" placeholder="Search or type a new vendor"><small>Existing vendors are suggested as you type</small></label>
+      <label class="f"><span>Service / Description</span><input name="service" value="${esc(v ? v.service : '')}" placeholder="e.g. Photography for pre-shoot"></label>
+      <label class="f"><span>Estimated Cost (LKR) *</span><input name="estimatedCost" inputmode="decimal" value="${v ? amountInput(v.estimatedCost) || '0' : ''}" placeholder="0.00"><small>Total expected cost of this service</small></label>
+      <label class="f"><span>Advance Paid (LKR)</span><input name="advance" inputmode="decimal" value="${v ? amountInput(c.adv) : ''}" placeholder="0.00" ${advLocked ? 'disabled' : ''}><small>${advLocked ? 'Several advance entries exist — edit them in Payment History' : 'Initial advance (counted inside Total Paid)'}</small></label>
+      <label class="f"><span>${v ? 'New Additional Payment (LKR)' : 'Additional Payment (LKR)'}</span><input name="additional" inputmode="decimal" placeholder="0.00"><small>${v ? `Already paid after advance: ${money(otherPaid)}` : 'Any amount paid on top of the advance'}</small></label>
+      <label class="f"><span>Payment Date</span><div class="date-line"><input type="date" name="date"><button type="button" class="btn ghost sm" data-today>Today</button></div><small>Date of the payment(s) entered in this form</small></label>
+      <label class="f"><span>Payment Method</span><select name="method"><option value="">— Select —</option>${METHODS.map(m => `<option>${m}</option>`).join('')}</select></label>
+      <label class="f"><span>Next Payment Due Date</span><input type="date" name="dueDate" value="${esc(v ? v.dueDate || '' : '')}"><small>Optional — you'll get a warning as it approaches</small></label>
+      <label class="f full"><span>Payment Reminder</span><input name="reminder" value="${esc(v ? v.reminder || '' : '')}" placeholder="e.g. Pay balance one week before the wedding"></label>
+      <label class="f full"><span>Notes</span><textarea name="notes" rows="2">${esc(v ? v.notes || '' : '')}</textarea></label>
+      <label class="f full"><span>Upload Invoice / Receipt</span><input type="file" name="files" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><small>PDF, JPG, JPEG or PNG · you can select several · stored only in this browser</small></label>
+    </div>
+    <div class="calc-preview"></div>
+    <datalist id="dlc-${k}">${categoriesAll().map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+    <datalist id="dlv-${k}">${vendorNamesAll().map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+  </form>`;
+  const m = openModal({ title: v ? 'Edit Vendor' : 'Add Vendor', size: 'lg', body,
+    footer: `<button type="button" class="btn ghost" data-cancel>Cancel</button><button type="button" class="btn primary" data-save>${v ? 'Save Changes' : 'Save Vendor'}</button>` });
+  const f = m.querySelector('form');
+  const g = n => f.elements[n];
+  const errBox = f.querySelector('.form-error');
+  const prev = f.querySelector('.calc-preview');
+
+  const upd = () => {
+    const est = parseAmount(g('estimatedCost').value);
+    const adv = advLocked ? c.adv : parseAmount(g('advance').value);
+    const add = parseAmount(g('additional').value);
+    if ([est, adv, add].some(x => isNaN(x))) { prev.innerHTML = '<div style="grid-column:1/-1"><span>Enter valid amounts to see the calculation</span></div>'; return; }
+    const tp = r2(otherPaid + adv + add); const rem = r2(est - tp);
+    const st = tp <= 0 ? 'pending' : tp >= est ? 'full' : 'partial';
+    prev.innerHTML = `<div><span>Total Paid</span><b>${money(tp)}</b></div><div><span>Remaining Balance</span><b class="${rem < 0 ? 'neg' : ''}">${rem < 0 ? 'Overpaid ' + money(-rem) : money(rem)}</b></div><div><span>Status</span><div>${pill(st)}</div></div>`;
+  };
+  ['estimatedCost','advance','additional'].forEach(n => g(n).addEventListener('input', upd));
+  upd();
+  f.querySelector('[data-today]').onclick = () => { g('date').value = todayStr(); };
+  m.querySelector('[data-cancel]').onclick = () => m.close();
+  f.addEventListener('submit', e => { e.preventDefault(); save(); });
+  m.querySelector('[data-save]').onclick = save;
+  setTimeout(() => (v ? g('estimatedCost') : g('category')).focus(), 50);
+
+  let saving = false;
+  async function save(){
+    if (saving) return;
+    f.querySelectorAll('.invalid').forEach(x => x.classList.remove('invalid'));
+    const errs = []; const bad = n => g(n).classList.add('invalid');
+    const section = g('section').value;
+    const category = g('category').value.trim();
+    const vName = g('vendorName').value.trim();
+    const service = g('service').value.trim();
+    const estRaw = g('estimatedCost').value.trim();
+    const est = parseAmount(estRaw);
+    const adv = advLocked ? c.adv : parseAmount(g('advance').value);
+    const add = parseAmount(g('additional').value);
+    if (!SECTIONS[section]) { errs.push('Choose an event section.'); bad('section'); }
+    if (!category) { errs.push('Category is required.'); bad('category'); }
+    if (!vName) { errs.push('Vendor name is required.'); bad('vendorName'); }
+    if (estRaw === '') { errs.push('Estimated cost is required (enter 0 if unknown).'); bad('estimatedCost'); }
+    else if (isNaN(est)) { errs.push('Estimated cost must be a valid number.'); bad('estimatedCost'); }
+    else if (est < 0) { errs.push('Estimated cost cannot be negative.'); bad('estimatedCost'); }
+    if (isNaN(adv)) { errs.push('Advance paid must be a valid number.'); bad('advance'); }
+    else if (adv < 0) { errs.push('Advance paid cannot be negative.'); bad('advance'); }
+    if (isNaN(add)) { errs.push('Additional payment must be a valid number.'); bad('additional'); }
+    else if (add < 0) { errs.push('Additional payment cannot be negative.'); bad('additional'); }
+    const { files, errors: fileErrs } = validateFiles(g('files').files);
+    errs.push(...fileErrs);
+    if (errs.length) { errBox.hidden = false; errBox.innerHTML = `<b>Please fix the following:</b><ul>${errs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`; if (errBox.scrollIntoView) errBox.scrollIntoView({ block: "nearest" }); return; }
+    errBox.hidden = true;
+
+    const newTotal = r2(otherPaid + adv + add);
+    if (newTotal > est) {
+      const ok = await confirmDialog(`Total payments for <b>${esc(vName)}</b> would be <b>${money(newTotal)}</b>, which is more than the estimated cost of <b>${money(est)}</b>.<br><br><span class="over">Overpayment: ${money(newTotal - est)}</span><br><br>Save anyway?`, { title: 'Payment exceeds estimated cost', ok: 'Save with overpayment' });
+      if (!ok) return;
+    }
+    saving = true; m.querySelector('[data-save]').disabled = true;
+    const now = new Date().toISOString();
+    const date = g('date').value, method = g('method').value;
+    const rec = v ? { ...v } : { id: uid(), createdAt: now, order: nextOrder() };
+    Object.assign(rec, { section, category, vendorName: vName, service, estimatedCost: est,
+      dueDate: g('dueDate').value, reminder: g('reminder').value.trim(), notes: g('notes').value.trim(), updatedAt: now });
+    try {
+      await DB.put('vendors', rec);
+      if (!advLocked) {
+        const ex = advPays[0];
+        if (ex) {
+          if (adv <= 0) { await deletePaymentRecord(ex.id); }
+          else if (r2(ex.amount) !== adv) await DB.put('payments', { ...ex, amount: adv, date: ex.date || date, method: ex.method || method, updatedAt: now });
+        } else if (adv > 0) {
+          await DB.put('payments', { id: uid(), vendorId: rec.id, type: 'advance', amount: adv, date, method, notes: 'Advance payment', createdAt: now });
+        }
+      }
+      if (add > 0) await DB.put('payments', { id: uid(), vendorId: rec.id, type: 'additional', amount: add, date, method, notes: '', createdAt: now });
+      for (const file of files) await saveFile(file, rec.id, null);
+      if (!DEFAULT_CATEGORIES.includes(category) && !state.meta.customCategories.includes(category)) state.meta.customCategories.push(category);
+      if (!state.meta.vendorNames.some(n => n.toLowerCase() === vName.toLowerCase())) state.meta.vendorNames.push(vName);
+      await saveMeta();
+      await refresh();
+      m.close();
+      toast(v ? (v.section !== section ? `Saved and moved to ${SECTIONS[section]}` : 'Vendor updated') : 'Vendor added');
+    } catch (err) {
+      saving = false; m.querySelector('[data-save]').disabled = false;
+      errBox.hidden = false; errBox.textContent = 'Could not save: ' + errMsg(err);
+      await refresh();
+    }
+  }
+}
+
+/* ================= Payment form ================= */
+function openPaymentForm(vendorId, paymentId = null){
+  const v = state.vendors.find(x => x.id === vendorId);
+  if (!v) return toast('Vendor not found', 'err');
+  const c = calc(v);
+  const p = paymentId ? c.ps.find(x => x.id === paymentId) : null;
+  if (paymentId && !p) return toast('Payment not found', 'err');
+  const paidOthers = r2(c.paid - (p ? p.amount : 0));
+  const body = `<form novalidate>
+    <div class="summary-strip">
+      <div><span>Estimated Cost</span><b>${money(c.est)}</b></div>
+      <div><span>Total Paid${p ? ' (other entries)' : ''}</span><b>${money(paidOthers)}</b></div>
+      <div><span>Remaining${p ? ' (before this)' : ''}</span><b>${money(r2(c.est - paidOthers))}</b></div>
+    </div>
+    <div class="form-error" hidden></div>
+    <div class="form-grid">
+      <label class="f"><span>Payment Type</span><select name="type"><option value="additional" ${!p || p.type === 'additional' ? 'selected' : ''}>Additional Payment</option><option value="advance" ${p && p.type === 'advance' ? 'selected' : ''}>Advance Payment</option></select></label>
+      <label class="f"><span>Amount (LKR) *</span><input name="amount" inputmode="decimal" value="${p ? amountInput(p.amount) : ''}" placeholder="0.00"></label>
+      <label class="f"><span>Payment Date</span><div class="date-line"><input type="date" name="date" value="${esc(p ? p.date || '' : '')}"><button type="button" class="btn ghost sm" data-today>Today</button></div></label>
+      <label class="f"><span>Payment Method</span><select name="method"><option value="">— Select —</option>${METHODS.map(m => `<option ${p && p.method === m ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
+      <label class="f full"><span>Notes</span><input name="notes" value="${esc(p ? p.notes || '' : '')}" placeholder="e.g. Second instalment"></label>
+      <label class="f full"><span>Attach Invoice / Receipt</span><input type="file" name="files" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><small>Linked to this payment · PDF, JPG, JPEG or PNG</small></label>
+    </div>
+    <div class="calc-preview"></div>
+  </form>`;
+  const m = openModal({ title: `${p ? 'Edit Payment' : 'Add Payment'} — ${v.vendorName}`, body,
+    footer: `<button type="button" class="btn ghost" data-cancel>Cancel</button><button type="button" class="btn primary" data-save>${p ? 'Save Payment' : 'Add Payment'}</button>` });
+  const f = m.querySelector('form'); const g = n => f.elements[n];
+  const errBox = f.querySelector('.form-error'); const prev = f.querySelector('.calc-preview');
+  const upd = () => {
+    const a = parseAmount(g('amount').value);
+    if (isNaN(a)) { prev.innerHTML = '<div style="grid-column:1/-1"><span>Enter a valid amount</span></div>'; return; }
+    const tp = r2(paidOthers + a), rem = r2(c.est - tp), st = tp <= 0 ? 'pending' : tp >= c.est ? 'full' : 'partial';
+    prev.innerHTML = `<div><span>New Total Paid</span><b>${money(tp)}</b></div><div><span>New Remaining</span><b class="${rem < 0 ? 'neg' : ''}">${rem < 0 ? 'Overpaid ' + money(-rem) : money(rem)}</b></div><div><span>Status</span><div>${pill(st)}</div></div>`;
+  };
+  g('amount').addEventListener('input', upd); upd();
+  f.querySelector('[data-today]').onclick = () => { g('date').value = todayStr(); };
+  m.querySelector('[data-cancel]').onclick = () => m.close();
+  f.addEventListener('submit', e => { e.preventDefault(); save(); });
+  m.querySelector('[data-save]').onclick = save;
+  setTimeout(() => g('amount').focus(), 50);
+  let saving = false;
+  async function save(){
+    if (saving) return;
+    const errs = [];
+    g('amount').classList.remove('invalid');
+    const raw = g('amount').value.trim(); const amt = parseAmount(raw);
+    if (raw === '' || isNaN(amt)) errs.push('Enter a valid payment amount.');
+    else if (amt < 0) errs.push('Payment amount cannot be negative.');
+    else if (amt === 0) errs.push('Payment amount must be more than zero.');
+    const { files, errors: fe } = validateFiles(g('files').files); errs.push(...fe);
+    if (errs.length) { if (errs[0].includes('amount')) g('amount').classList.add('invalid'); errBox.hidden = false; errBox.innerHTML = `<ul>${errs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`; return; }
+    const newTotal = r2(paidOthers + amt);
+    if (newTotal > c.est) {
+      const ok = await confirmDialog(`This payment brings Total Paid for <b>${esc(v.vendorName)}</b> to <b>${money(newTotal)}</b>, above the estimated cost of <b>${money(c.est)}</b>.<br><br><span class="over">Overpayment: ${money(newTotal - c.est)}</span><br><br>If the vendor's final price increased, edit the Estimated Cost instead. Record this payment anyway?`, { title: 'Payment exceeds estimated cost', ok: 'Record overpayment' });
+      if (!ok) return;
+    }
+    saving = true; m.querySelector('[data-save]').disabled = true;
+    const now = new Date().toISOString();
+    const rec = p ? { ...p, updatedAt: now } : { id: uid(), vendorId, createdAt: now };
+    Object.assign(rec, { type: g('type').value, amount: amt, date: g('date').value, method: g('method').value, notes: g('notes').value.trim() });
+    try {
+      await DB.put('payments', rec);
+      for (const file of files) await saveFile(file, vendorId, rec.id);
+      await refresh(); m.close();
+      toast(p ? 'Payment updated' : `Payment of ${money(amt)} recorded`);
+    } catch (err) {
+      saving = false; m.querySelector('[data-save]').disabled = false;
+      errBox.hidden = false; errBox.textContent = 'Could not save: ' + errMsg(err);
+    }
+  }
+}
+
+async function deletePaymentRecord(pid){
+  // keep any receipts: re-link them to the vendor instead of deleting
+  for (const a of state.attachments.filter(x => x.paymentId === pid)) await DB.put('attachments', { ...a, paymentId: null });
+  await DB.del('payments', pid);
+}
+
+/* ================= History modal ================= */
+function openHistory(vendorId){
+  const v0 = state.vendors.find(x => x.id === vendorId);
+  if (!v0) return toast('Vendor not found', 'err');
+  const m = openModal({ title: 'Payment History — ' + v0.vendorName, size: 'lg', body: '<div data-h></div>',
+    footer: `<button type="button" class="btn ghost" data-close>Close</button><button type="button" class="btn primary" data-act="pay" data-id="${vendorId}">+ Add Payment</button>` });
+  m.querySelector('[data-close]').onclick = () => m.close();
+  const draw = () => {
+    const v = state.vendors.find(x => x.id === vendorId); if (!v) { m.close(); return; }
+    const c = calc(v); const ps = sortPays(c.ps); let run = 0;
+    m.querySelector('[data-h]').innerHTML = `
+      <p class="muted" style="margin:0 0 12px">${esc(v.service || v.category)} · ${SECTIONS[v.section]} ${pill(c.status)}</p>
+      <div class="summary-strip"><div><span>Estimated</span><b>${money(c.est)}</b></div><div><span>Advance</span><b>${money(c.adv)}</b></div><div><span>Total Paid</span><b>${money(c.paid)}</b></div><div><span>Remaining</span><b>${remHTML(c)}</b></div></div>
+      ${ps.length ? `<div class="st-wrap"><table class="st"><thead><tr><th>#</th><th>Date</th><th>Type</th><th class="num">Amount</th><th class="num">Running Total</th><th>Method</th><th>Notes</th><th>Receipt</th><th></th></tr></thead><tbody>
+      ${ps.map((p, i) => { run = r2(run + p.amount); const atts = state.attachments.filter(a => a.paymentId === p.id); return `<tr>
+        <td>${i + 1}</td><td>${p.date ? esc(fmtDate(p.date)) : '<span class="muted">Not recorded</span>'}</td>
+        <td><span class="tag ${p.type === 'advance' ? 'gold' : ''}">${p.type === 'advance' ? 'Advance' : 'Payment'}</span></td>
+        <td class="num">${money(p.amount)}</td><td class="num">${money(run)}</td><td>${esc(p.method || '—')}</td><td>${esc(p.notes || '')}</td>
+        <td>${atts.length ? atts.map(a => `<button type="button" class="link" data-att="prev" data-aid="${a.id}">📎 ${esc(a.name)}</button>`).join('<br>') : '—'}</td>
+        <td><div class="row-actions" style="min-width:110px"><button type="button" class="ab" data-pedit="${p.id}">Edit</button><button type="button" class="ab del" data-pdel="${p.id}">Delete</button></div></td></tr>`; }).join('')}
+      </tbody><tfoot><tr><td colspan="3">TOTAL PAID</td><td class="num">${money(c.paid)}</td><td colspan="5"></td></tr></tfoot></table></div>`
+      : emptyBlock('No payments yet', 'Record the first payment for this vendor.')}`;
+  };
+  draw();
+  m.addEventListener('click', async e => {
+    const ed = e.target.closest('[data-pedit]');
+    if (ed) { m.close(); openPaymentForm(vendorId, ed.dataset.pedit); return; }
+    const dl = e.target.closest('[data-pdel]');
+    if (dl) {
+      const p = state.payments.find(x => x.id === dl.dataset.pdel); if (!p) return;
+      const ok = await confirmDialog(`Delete the ${p.type === 'advance' ? 'advance' : 'payment'} of <b>${money(p.amount)}</b>${p.date ? ' made on ' + esc(fmtDate(p.date)) : ''}?<br><small class="muted">Any receipt attached to it will be kept under the vendor's invoices.</small>`, { title: 'Delete payment', ok: 'Delete payment', danger: true });
+      if (!ok) return;
+      try { await deletePaymentRecord(p.id); await refresh(); draw(); toast('Payment deleted'); } catch (err) { toast('Could not delete: ' + errMsg(err), 'err'); }
+    }
+  });
+}
+
+/* ================= Invoices modal ================= */
+function openInvoices(vendorId){
+  const v0 = state.vendors.find(x => x.id === vendorId);
+  if (!v0) return toast('Vendor not found', 'err');
+  const m = openModal({ title: 'Invoices & Receipts — ' + v0.vendorName, size: 'lg', body: '<div data-i></div>',
+    footer: '<button type="button" class="btn ghost" data-close>Close</button>' });
+  m.querySelector('[data-close]').onclick = () => m.close();
+  const draw = () => {
+    const v = state.vendors.find(x => x.id === vendorId); if (!v) { m.close(); return; }
+    const c = calc(v); const atts = attachmentsFor(vendorId);
+    m.querySelector('[data-i]').innerHTML = `
+      <div class="upload-box">
+        <b>Upload invoice or receipt</b>
+        <div class="row">
+          <input type="file" data-up multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+          <select class="input" data-link><option value="">Link to: vendor (general)</option>${sortPays(c.ps).map(p => `<option value="${p.id}">Link to: ${esc(paymentLabel(p.id))}</option>`).join('')}</select>
+          <button type="button" class="btn primary" data-do-up>Upload</button>
+        </div>
+        <small class="muted">PDF, JPG, JPEG or PNG · stored only in this browser — remember to back up.</small>
+      </div>
+      <div class="att-list">${atts.length ? atts.map(a => attRow(a, { removable: true, linkLabel: a.paymentId ? paymentLabel(a.paymentId) : 'Vendor file' })).join('') : emptyBlock('No invoices yet', 'Upload a PDF or photo of the invoice or receipt.')}</div>`;
+  };
+  draw();
+  m.addEventListener('click', async e => {
+    if (e.target.closest('[data-do-up]')) {
+      const inp = m.querySelector('[data-up]');
+      if (!inp.files.length) return toast('Choose a file first', 'err');
+      const { files, errors } = validateFiles(inp.files);
+      if (errors.length) return infoDialog('Some files were not accepted', `<ul>${errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`);
+      const link = m.querySelector('[data-link]').value || null;
+      try { for (const f of files) await saveFile(f, vendorId, link); await refresh(); draw(); toast(`${files.length} file${files.length === 1 ? '' : 's'} uploaded`); }
+      catch (err) { toast('Upload failed: ' + errMsg(err), 'err'); }
+      return;
+    }
+    const rm = e.target.closest('[data-att="rm"]');
+    if (rm) {
+      e.stopPropagation();
+      const a = state.attachments.find(x => x.id === rm.dataset.aid); if (!a) return;
+      const ok = await confirmDialog(`Remove <b>${esc(a.name)}</b>? This deletes the stored file from this browser.`, { title: 'Remove attachment', ok: 'Remove', danger: true });
+      if (!ok) return;
+      try { await DB.del('attachments', a.id); await refresh(); draw(); toast('Attachment removed'); } catch (err) { toast('Could not remove: ' + errMsg(err), 'err'); }
+    }
+  });
+}
+
+/* ================= Details modal ================= */
+function openDetails(vendorId){
+  const v = state.vendors.find(x => x.id === vendorId);
+  if (!v) return toast('Vendor not found', 'err');
+  const c = calc(v); const atts = attachmentsFor(v.id); const d = dueInfo(v, c);
+  const siblings = state.vendors.filter(x => x.id !== v.id && x.vendorName.toLowerCase() === v.vendorName.toLowerCase());
+  const pct = c.est > 0 ? Math.min(100, c.paid / c.est * 100) : (c.paid > 0 ? 100 : 0);
+  const body = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${pill(c.status)} <span class="tag ${v.section === 'pre' ? 'gold' : ''}">${SECTIONS[v.section]}</span>${d ? ` <span class="due ${d.cls}" style="margin:0">${esc(d.text)}</span>` : ''}</div>
+    <div class="summary-strip"><div><span>Estimated Cost</span><b>${money(c.est)}</b></div><div><span>Advance Paid</span><b>${money(c.adv)}</b></div><div><span>Total Paid</span><b>${money(c.paid)}</b></div><div><span>Remaining Balance</span><b>${remHTML(c)}</b></div></div>
+    <div class="progress"><span style="width:${pct.toFixed(1)}%"></span></div><div class="progress-row"><span>${pct.toFixed(1)}% paid</span></div>
+    <p class="subhead">Details</p>
+    <div class="info-grid">
+      <div><span>Category</span><p>${esc(v.category)}</p></div>
+      <div><span>Vendor</span><p>${esc(v.vendorName)}</p></div>
+      <div><span>Service / Description</span><p>${esc(v.service || '—')}</p></div>
+      <div><span>Next Due Date</span><p>${v.dueDate ? esc(fmtDate(v.dueDate)) : '—'}</p></div>
+      <div><span>Reminder</span><p>${esc(v.reminder || '—')}</p></div>
+      <div><span>Notes</span><p>${esc(v.notes || '—')}</p></div>
+    </div>
+    <p class="subhead">Payment History</p>
+    ${c.ps.length ? `<div class="st-wrap"><table class="st"><thead><tr><th>Date</th><th>Type</th><th class="num">Amount</th><th>Method</th><th>Notes</th></tr></thead><tbody>${sortPays(c.ps).map(p => `<tr><td>${p.date ? esc(fmtDate(p.date)) : '<span class="muted">Not recorded</span>'}</td><td>${p.type === 'advance' ? 'Advance' : 'Payment'}</td><td class="num">${money(p.amount)}</td><td>${esc(p.method || '—')}</td><td>${esc(p.notes || '')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No payments recorded.</p>'}
+    <p class="subhead">Invoice History</p>
+    ${atts.length ? `<div class="att-list">${atts.map(a => attRow(a, { linkLabel: a.paymentId ? paymentLabel(a.paymentId) : 'Vendor file' })).join('')}</div>` : '<p class="muted">No invoices uploaded.</p>'}
+    ${siblings.length ? `<p class="subhead">Other services from ${esc(v.vendorName)}</p><ul class="top-list">${siblings.map(s => { const sc = calc(s); return `<li><div class="t"><div>${esc(s.service || s.category)}</div><small>${SECTIONS[s.section]} · ${money(sc.paid)} paid of ${money(sc.est)}</small></div><button type="button" class="ab" data-act="view" data-id="${s.id}">View</button></li>`; }).join('')}</ul>` : ''}
+    <p class="muted" style="font-size:12px;margin-top:14px">Created ${esc(fmtDateTime(v.createdAt))}${v.updatedAt && v.updatedAt !== v.createdAt ? ' · last updated ' + esc(fmtDateTime(v.updatedAt)) : ''}</p>`;
+  const m = openModal({ title: v.vendorName, size: 'lg', body,
+    footer: `<button type="button" class="btn ghost" data-addsvc>+ Add Another Service</button><button type="button" class="btn ghost" data-act="invoices" data-id="${v.id}">Invoices</button><button type="button" class="btn ghost" data-act="edit" data-id="${v.id}">Edit</button><button type="button" class="btn primary" data-act="pay" data-id="${v.id}">+ Add Payment</button>` });
+  m.querySelector('[data-addsvc]').onclick = () => { m.close(); openVendorForm({ section: v.section, vendorName: v.vendorName }); };
+}
+
+/* ================= Move / delete ================= */
+async function moveVendor(id){
+  const v = state.vendors.find(x => x.id === id); if (!v) return;
+  const to = v.section === 'pre' ? 'wed' : 'pre';
+  const ok = await confirmDialog(`Move <b>${esc(v.vendorName)}</b> (${esc(v.service || v.category)}) from <b>${SECTIONS[v.section]}</b> to <b>${SECTIONS[to]}</b>?<br><small class="muted">Its payments and invoices move with it.</small>`, { title: 'Move vendor', ok: 'Move vendor' });
+  if (!ok) return;
+  try { await DB.put('vendors', { ...v, section: to, order: nextOrder(), updatedAt: new Date().toISOString() }); await refresh(); toast(`Moved to ${SECTIONS[to]}`); }
+  catch (err) { toast('Could not move: ' + errMsg(err), 'err'); }
+}
+async function deleteVendor(id){
+  const v = state.vendors.find(x => x.id === id); if (!v) return;
+  const c = calc(v); const atts = attachmentsFor(id);
+  const ok = await confirmDialog(`Delete <b>${esc(v.vendorName)}</b> — ${esc(v.service || v.category)}?<br><br>This also deletes <b>${c.ps.length}</b> payment record${c.ps.length === 1 ? '' : 's'} (${money(c.paid)}) and <b>${atts.length}</b> invoice file${atts.length === 1 ? '' : 's'}.<br><br><span class="over">This cannot be undone.</span> Consider downloading a backup first.`, { title: 'Delete vendor', ok: 'Delete permanently', danger: true });
+  if (!ok) return;
+  try {
+    for (const p of c.ps) await DB.del('payments', p.id);
+    for (const a of atts) await DB.del('attachments', a.id);
+    await DB.del('vendors', id);
+    await refresh(); toast('Vendor deleted');
+  } catch (err) { toast('Could not delete: ' + errMsg(err), 'err'); await refresh(); }
+}
+
+function handleAction(act, id){
+  switch (act) {
+    case 'view': return openDetails(id);
+    case 'edit': return openVendorForm({ id });
+    case 'pay': return openPaymentForm(id);
+    case 'history': return openHistory(id);
+    case 'invoices': return openInvoices(id);
+    case 'move': return moveVendor(id);
+    case 'delete': return deleteVendor(id);
+  }
+}
+
+/* ================= Excel export ================= */
+const XL_MONEY = '"LKR" #,##0.00';
+function xlReady(){
+  if (!window.XLSX || !XLSX.utils) { infoDialog('Excel library not loaded', 'The Excel library loads from the internet (cdn.jsdelivr.net). Please check your internet connection and reload the page, then try again.'); return false; }
+  return true;
+}
+function buildSheet(header, rows, { money: moneyCols = [], widths = [], totals = null, pct = [] } = {}){
+  const X = XLSX;
+  const ws = X.utils.aoa_to_sheet([header, ...rows]);
+  const nCols = header.length, nRows = rows.length;
+  const ln = { style: 'thin', color: { rgb: 'C8D1E6' } };
+  const bd = { top: ln, bottom: ln, left: ln, right: ln };
+  const headStyle = { font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 }, fill: { patternType: 'solid', fgColor: { rgb: '1E3A8A' } }, alignment: { vertical: 'center', horizontal: 'center', wrapText: true }, border: bd };
+  for (let C = 0; C < nCols; C++) ws[X.utils.encode_cell({ r: 0, c: C })].s = headStyle;
+  for (let R = 1; R <= nRows; R++) for (let C = 0; C < nCols; C++) {
+    const a = X.utils.encode_cell({ r: R, c: C });
+    if (!ws[a]) ws[a] = { t: 's', v: '' };
+    const cell = ws[a];
+    const s = { border: bd, alignment: { vertical: 'top', wrapText: true }, font: { sz: 10 } };
+    if (R % 2 === 0) s.fill = { patternType: 'solid', fgColor: { rgb: 'F4F6FB' } };
+    if (moneyCols.includes(C) && cell.t === 'n') { cell.z = XL_MONEY; s.numFmt = XL_MONEY; s.alignment.horizontal = 'right'; }
+    if (pct.includes(C) && cell.t === 'n') { cell.z = '0.0%'; s.numFmt = '0.0%'; s.alignment.horizontal = 'right'; }
+    cell.s = s;
+  }
+  let lastR = nRows;
+  if (totals) {
+    const R = nRows + 1; lastR = R;
+    for (let C = 0; C < nCols; C++) {
+      const a = X.utils.encode_cell({ r: R, c: C });
+      const s = { font: { bold: true, sz: 10 }, fill: { patternType: 'solid', fgColor: { rgb: 'F6EFD9' } }, border: { ...bd, top: { style: 'medium', color: { rgb: 'C9A227' } } }, alignment: { vertical: 'center' } };
+      if (C === totals.labelCol) ws[a] = { t: 's', v: totals.label || 'TOTAL', s };
+      else if (totals.sumCols.includes(C)) {
+        const col = X.utils.encode_col(C);
+        const val = r2(rows.reduce((acc, r) => acc + (Number(r[C]) || 0), 0));
+        const cs = { ...s, alignment: { horizontal: 'right', vertical: 'center' } };
+        const cell = { t: 'n', v: val, s: cs };
+        if (moneyCols.includes(C)) { cell.z = XL_MONEY; cs.numFmt = XL_MONEY; }
+        if (nRows > 0) cell.f = `SUM(${col}2:${col}${nRows + 1})`;
+        ws[a] = cell;
+      } else ws[a] = { t: 's', v: '', s };
+    }
+  }
+  ws['!ref'] = X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: lastR, c: nCols - 1 } });
+  ws['!cols'] = header.map((h, i) => ({ wch: widths[i] || Math.max(10, String(h).length + 2) }));
+  ws['!rows'] = [{ hpt: 30 }];
+  ws['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(nRows, 0), c: nCols - 1 } }) };
+  ws['!margins'] = { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 };
+  return ws;
+}
+/* Adds frozen header row + landscape / fit-to-width print setup to every sheet */
+function postProcessXlsx(u8){
+  const CFB = XLSX.CFB;
+  if (!CFB) return u8;
+  const zip = CFB.read(u8, { type: 'array' });
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  let touched = 0;
+  zip.FullPaths.forEach((path, i) => {
+    if (!/xl\/worksheets\/sheet\d+\.xml$/.test(path)) return;
+    const entry = zip.FileIndex[i];
+    let xml = dec.decode(entry.content instanceof Uint8Array ? entry.content : new Uint8Array(entry.content));
+    const pane = '<sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView>';
+    if (/<sheetView [^>]*\/>/.test(xml)) xml = xml.replace(/<sheetView [^>]*\/>/, pane);
+    if (!/<sheetPr[\s>\/]/.test(xml)) xml = xml.replace(/(<worksheet[^>]*>)/, '$1<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>');
+    if (!/<pageSetup/.test(xml)) xml = xml.replace(/(<pageMargins[^>]*\/>)/, '$1<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>');
+    entry.content = enc.encode(xml); entry.size = entry.content.length;
+    touched++;
+  });
+  if (!touched) return u8;
+  return new Uint8Array(CFB.write(zip, { fileType: 'zip', type: 'array' }));
+}
+function writeWorkbook(wb, filename){
+  let out = new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array', compression: true }));
+  try { out = postProcessXlsx(out); } catch (e) { console.warn('Freeze-pane step skipped:', e); }
+  downloadBlob(new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+  return out;
+}
+const VENDOR_HEAD = ['#','Category','Vendor Name','Service','Estimated Cost (LKR)','Advance Paid (LKR)','Total Paid (LKR)','Remaining Balance (LKR)','Payment Status','Payment Dates','Payment Method','Notes','Invoice Files'];
+const VENDOR_OPTS = { money: [4,5,6,7], widths: [5,20,26,32,19,19,19,22,22,44,18,36,32], totals: { labelCol: 1, label: 'TOTAL', sumCols: [4,5,6,7] } };
+function vendorRows(sec){
+  return bySec(sec).map((v, i) => {
+    const c = calc(v); const ps = sortPays(c.ps);
+    const dates = ps.map(p => `${p.date ? fmtDate(p.date) : 'Date not recorded'} – ${money(p.amount)} (${p.type === 'advance' ? 'Advance' : 'Payment'})`).join('\n');
+    const methods = [...new Set(ps.map(p => p.method).filter(Boolean))].join(', ');
+    const notes = [v.notes, v.reminder ? 'Reminder: ' + v.reminder : '', v.dueDate ? 'Next due: ' + fmtDate(v.dueDate) : ''].filter(Boolean).join('\n');
+    const files = attachmentsFor(v.id).map(a => a.name).join('\n');
+    return [i + 1, v.category, v.vendorName, v.service || '', c.est, c.adv, c.paid, c.rem, STATUS[c.status].label + (c.over ? ` (Overpaid ${money(c.over)})` : ''), dates, methods, notes, files];
+  });
+}
+const PAY_HEAD = ['Date','Section','Category','Vendor Name','Service','Payment Type','Amount (LKR)','Payment Method','Notes','Attachment Files'];
+const PAY_OPTS = { money: [6], widths: [16,22,20,26,30,14,18,16,36,32], totals: { labelCol: 0, label: 'TOTAL', sumCols: [6] } };
+function paymentRows(sec){
+  const vmap = new Map(state.vendors.map(v => [v.id, v]));
+  return state.payments.filter(p => vmap.has(p.vendorId) && (!sec || vmap.get(p.vendorId).section === sec))
+    .map(p => ({ p, v: vmap.get(p.vendorId) }))
+    .sort((a,b) => SECTIONS[a.v.section].localeCompare(SECTIONS[b.v.section]) * -1 || (a.v.order - b.v.order) || (a.p.date || '').localeCompare(b.p.date || ''))
+    .map(({ p, v }) => [p.date ? fmtDate(p.date) : 'Not recorded', SECTIONS[v.section], v.category, v.vendorName, v.service || '', p.type === 'advance' ? 'Advance' : 'Additional Payment', r2(p.amount), p.method || '', p.notes || '', state.attachments.filter(a => a.paymentId === p.id).map(a => a.name).join('\n')]);
+}
+function summarySheet(list, label){
+  const t = totals(list);
+  const rows = [
+    [label + ' estimated budget', t.est], ['Total advances paid', t.adv], ['Total payments made', t.paid], ['Total outstanding balance', t.rem],
+    ['Fully paid vendor count', t.full], ['Pending / partially paid vendor count', t.partial + t.pending], ['Paid (% of budget)', t.est ? t.paid / t.est : 0], ['Report generated', new Date().toLocaleString('en-GB')]
+  ];
+  const ws = buildSheet(['Metric','Value'], rows, { widths: [40, 24] });
+  [1,2,3,4].forEach(R => { const a = 'B' + (R + 1); ws[a].z = XL_MONEY; ws[a].s.numFmt = XL_MONEY; ws[a].s.alignment.horizontal = 'right'; });
+  ws['B8'].z = '0.0%'; ws['B8'].s.numFmt = '0.0%'; ws['B8'].s.alignment.horizontal = 'right';
+  return ws;
+}
+function buildCombinedWorkbook(){
+  const X = XLSX; const wb = X.utils.book_new();
+  const pre = totals(bySec('pre')), wed = totals(bySec('wed')), all = totals(state.vendors);
+  const dash = [
+    ['Pre-shoot estimated budget', pre.est], ['Wedding & Homecoming estimated budget', wed.est], ['Combined estimated budget', all.est],
+    ['Total advances paid', all.adv], ['Total payments made', all.paid], ['Total outstanding balance', all.rem],
+    ['Fully paid vendor count', all.full], ['Pending / partially paid vendor count', all.partial + all.pending],
+    ['Overall paid (% of budget)', all.est ? all.paid / all.est : 0], ['Report generated', new Date().toLocaleString('en-GB')]
+  ];
+  const ws1 = buildSheet(['Metric','Value'], dash, { widths: [42, 24] });
+  [1,2,3,4,5,6].forEach(R => { const a = 'B' + (R + 1); ws1[a].z = XL_MONEY; ws1[a].s.numFmt = XL_MONEY; ws1[a].s.alignment.horizontal = 'right'; });
+  ws1['B10'].z = '0.0%'; ws1['B10'].s.numFmt = '0.0%'; ws1['B10'].s.alignment.horizontal = 'right';
+  X.utils.book_append_sheet(wb, ws1, 'Dashboard Summary');
+  X.utils.book_append_sheet(wb, buildSheet(VENDOR_HEAD, vendorRows('pre'), VENDOR_OPTS), 'Pre-shoot Vendors');
+  X.utils.book_append_sheet(wb, buildSheet(VENDOR_HEAD, vendorRows('wed'), VENDOR_OPTS), 'Wedding & Homecoming Vendors');
+  X.utils.book_append_sheet(wb, buildSheet(PAY_HEAD, paymentRows(''), PAY_OPTS), 'Payment History');
+  const cats = categorySummary().map(c => [SECTIONS[c.sec], c.category, c.count, c.est, c.adv, c.paid, c.rem, c.est ? c.paid / c.est : 0]);
+  X.utils.book_append_sheet(wb, buildSheet(['Section','Category','Services','Estimated (LKR)','Advance Paid (LKR)','Total Paid (LKR)','Remaining (LKR)','% Paid'], cats,
+    { money: [3,4,5,6], pct: [7], widths: [24,24,10,20,20,20,20,10], totals: { labelCol: 0, label: 'TOTAL', sumCols: [2,3,4,5,6] } }), 'Category Summary');
+  wb.Props = { Title: 'Wedding Budget', Author: 'Wedding Budget Tracker' };
+  return wb;
+}
+function doExport(kind){
+  if (!xlReady()) return;
+  try {
+    const X = XLSX; const d = todayStr(); let wb, name;
+    if (kind === 'combined') { wb = buildCombinedWorkbook(); name = `Wedding_Budget_Combined_${d}.xlsx`; }
+    else if (kind === 'pre' || kind === 'wed') {
+      wb = X.utils.book_new();
+      X.utils.book_append_sheet(wb, summarySheet(bySec(kind), SECTIONS[kind]), 'Summary');
+      X.utils.book_append_sheet(wb, buildSheet(VENDOR_HEAD, vendorRows(kind), VENDOR_OPTS), kind === 'pre' ? 'Pre-shoot Vendors' : 'Wedding & Homecoming Vendors');
+      X.utils.book_append_sheet(wb, buildSheet(PAY_HEAD, paymentRows(kind), PAY_OPTS), 'Payment History');
+      name = kind === 'pre' ? `Preshoot_Budget_${d}.xlsx` : `Wedding_Homecoming_Budget_${d}.xlsx`;
+    } else if (kind === 'payments') {
+      wb = X.utils.book_new();
+      X.utils.book_append_sheet(wb, buildSheet(PAY_HEAD, paymentRows(''), PAY_OPTS), 'Payment History');
+      name = `Wedding_Payment_History_${d}.xlsx`;
+    } else return;
+    writeWorkbook(wb, name);
+    toast('Excel downloaded: ' + name);
+  } catch (err) { console.error(err); toast('Excel export failed: ' + errMsg(err), 'err'); }
+}
+
+/* ================= Invoices zip ================= */
+async function downloadAllInvoices(){
+  if (!state.attachments.length) return infoDialog('No invoices', 'There are no invoice or receipt files stored yet.');
+  const vmap = new Map(state.vendors.map(v => [v.id, v]));
+  const safe = s => String(s || '').replace(/[\\/:*?"<>|]+/g, '_').trim() || 'file';
+  if (window.XLSX && XLSX.CFB) {
+    try {
+      const CFB = XLSX.CFB; const zip = CFB.utils.cfb_new(); const used = new Set();
+      for (const a of state.attachments) {
+        const v = vmap.get(a.vendorId);
+        let path = `${safe(v ? SECTIONS[v.section] : 'Unlinked')}/${safe(v ? v.vendorName + (v.service ? ' - ' + v.service : '') : 'Unknown')}/${safe(a.name)}`;
+        let n = 1; const base = path; while (used.has(path)) { path = base.replace(/(\.[^.]+)?$/, m => `(${++n})${m}`); }
+        used.add(path);
+        CFB.utils.cfb_add(zip, path, new Uint8Array(await readBuf(a.blob)));
+      }
+      try { CFB.utils.cfb_del(zip, '\u0001Sh33tJ5'); } catch (e) {}
+      const out = CFB.write(zip, { fileType: 'zip', type: 'array' });
+      downloadBlob(new Blob([new Uint8Array(out)], { type: 'application/zip' }), `Wedding_Invoices_${todayStr()}.zip`);
+      toast(`${state.attachments.length} invoice file(s) zipped`);
+      return;
+    } catch (e) { console.warn('Zip failed, downloading individually', e); }
+  }
+  for (const a of state.attachments) { downloadBlob(a.blob, a.name); await new Promise(r => setTimeout(r, 400)); }
+}
+
+/* ================= Backup / restore ================= */
+async function exportBackup(){
+  try {
+    toast('Preparing backup…');
+    const atts = [];
+    for (const a of state.attachments) atts.push({ id: a.id, vendorId: a.vendorId, paymentId: a.paymentId || null, name: a.name, type: a.type, size: a.size, uploadedAt: a.uploadedAt, data: await blobToDataURL(a.blob) });
+    const data = { app: 'WeddingBudgetTracker', version: 1, exportedAt: new Date().toISOString(),
+      meta: { customCategories: state.meta.customCategories, vendorNames: state.meta.vendorNames },
+      vendors: state.vendors, payments: state.payments, attachments: atts };
+    downloadBlob(new Blob([JSON.stringify(data)], { type: 'application/json' }), `Wedding_Budget_Backup_${todayStr()}.json`);
+    state.meta.lastBackup = new Date().toISOString();
+    await saveMeta(); renderAll();
+    toast('Backup downloaded — keep it somewhere safe');
+  } catch (err) { toast('Backup failed: ' + errMsg(err), 'err'); }
+}
+function validateBackup(d){
+  const e = [];
+  if (!d || typeof d !== 'object') return ['The file does not contain backup data.'];
+  if (d.app !== 'WeddingBudgetTracker') e.push('This file was not created by the Wedding Budget Tracker.');
+  if (!Array.isArray(d.vendors)) e.push('Missing vendor list.');
+  if (!Array.isArray(d.payments)) e.push('Missing payment list.');
+  if (d.attachments != null && !Array.isArray(d.attachments)) e.push('Attachment list is invalid.');
+  if (e.length) return e;
+  const ids = new Set();
+  d.vendors.forEach((v, i) => {
+    if (!v || typeof v.id !== 'string') e.push(`Vendor #${i + 1} has no id.`);
+    else ids.add(v.id);
+    if (!v || !SECTIONS[v.section]) e.push(`Vendor #${i + 1} has an invalid section.`);
+    if (!v || typeof v.vendorName !== 'string' || !v.vendorName.trim()) e.push(`Vendor #${i + 1} has no name.`);
+    if (!v || typeof v.estimatedCost !== 'number' || !isFinite(v.estimatedCost) || v.estimatedCost < 0) e.push(`Vendor #${i + 1} has an invalid estimated cost.`);
+  });
+  d.payments.forEach((p, i) => {
+    if (!p || typeof p.id !== 'string') e.push(`Payment #${i + 1} has no id.`);
+    if (!p || !ids.has(p.vendorId)) e.push(`Payment #${i + 1} refers to a missing vendor.`);
+    if (!p || typeof p.amount !== 'number' || !isFinite(p.amount) || p.amount < 0) e.push(`Payment #${i + 1} has an invalid amount.`);
+    if (!p || !['advance','additional'].includes(p.type)) e.push(`Payment #${i + 1} has an invalid type.`);
+  });
+  (d.attachments || []).forEach((a, i) => {
+    if (!a || typeof a.id !== 'string' || !ids.has(a.vendorId)) e.push(`Attachment #${i + 1} refers to a missing vendor.`);
+    if (!a || typeof a.data !== 'string' || !a.data.startsWith('data:')) e.push(`Attachment #${i + 1} has no file data.`);
+  });
+  return e;
+}
+async function importBackup(file){
+  let data;
+  try { data = JSON.parse(await readText(file)); }
+  catch (e) { return infoDialog('Restore failed', 'This file is not a valid JSON backup.'); }
+  const errs = validateBackup(data);
+  if (errs.length) return infoDialog('Restore failed', `<p>The backup could not be validated:</p><ul>${errs.slice(0, 10).map(x => `<li>${esc(x)}</li>`).join('')}</ul>${errs.length > 10 ? `<p>…and ${errs.length - 10} more problems.</p>` : ''}`);
+  const atts = data.attachments || [];
+  const ok = await confirmDialog(`Restore backup from <b>${esc(fmtDateTime(data.exportedAt) || 'unknown date')}</b>?<br><br>It contains <b>${data.vendors.length}</b> vendor services, <b>${data.payments.length}</b> payments and <b>${atts.length}</b> invoice files.<br><br><span class="over">This replaces ALL data currently stored in this browser.</span>`, { title: 'Restore backup', ok: 'Replace & restore', danger: true });
+  if (!ok) return;
+  try {
+    const attRecs = atts.map(a => ({ id: a.id, vendorId: a.vendorId, paymentId: a.paymentId || null, name: a.name || 'file', type: a.type || guessType(a.name), size: a.size || 0, uploadedAt: a.uploadedAt || new Date().toISOString(), blob: dataURLToBlob(a.data) }));
+    attRecs.forEach(a => { if (!a.size) a.size = a.blob.size; });
+    for (const s of ['vendors','payments','attachments']) await DB.clear(s);
+    await DB.putMany('vendors', data.vendors.map(v => ({ notes:'', reminder:'', dueDate:'', service:'', category:'Other', ...v })));
+    await DB.putMany('payments', data.payments.map(p => ({ date:'', method:'', notes:'', ...p })));
+    await DB.putMany('attachments', attRecs);
+    state.meta.customCategories = Array.isArray(data.meta && data.meta.customCategories) ? data.meta.customCategories : [];
+    state.meta.vendorNames = Array.isArray(data.meta && data.meta.vendorNames) ? data.meta.vendorNames : [];
+    state.meta.seeded = true;
+    await saveMeta(); await refresh();
+    toast('Backup restored successfully');
+  } catch (err) { toast('Restore failed: ' + errMsg(err), 'err'); await refresh(); }
+}
+async function resetDemo(){
+  const ok = await confirmDialog('Reset to the original budget records?<br><br><span class="over">ALL current vendors, payments and invoice files in this browser will be permanently deleted.</span> Download a backup first if you may need them.', { title: 'Reset demo data', ok: 'Delete everything & reset', danger: true });
+  if (!ok) return;
+  try {
+    for (const s of ['vendors','payments','attachments']) await DB.clear(s);
+    state.meta.customCategories = []; state.meta.vendorNames = [];
+    await seedData(); await refresh(); toast('Original budget data restored');
+  } catch (err) { toast('Reset failed: ' + errMsg(err), 'err'); }
+}
+
+/* ================= Print report ================= */
+function printReport(){
+  const all = totals(state.vendors);
+  const secTable = sec => {
+    const list = bySec(sec); const t = totals(list);
+    return `<h2>${SECTIONS[sec]} Budget</h2>${list.length ? `<table><thead><tr><th>#</th><th>Category</th><th>Vendor</th><th>Service</th><th class="num">Estimated</th><th class="num">Advance</th><th class="num">Total Paid</th><th class="num">Remaining</th><th>Status</th></tr></thead><tbody>
+      ${list.map((v, i) => { const c = calc(v); return `<tr><td>${i + 1}</td><td>${esc(v.category)}</td><td>${esc(v.vendorName)}</td><td>${esc(v.service)}</td><td class="num">${money(c.est)}</td><td class="num">${money(c.adv)}</td><td class="num">${money(c.paid)}</td><td class="num">${c.rem < 0 ? 'Overpaid ' + money(c.over) : money(c.rem)}</td><td>${STATUS[c.status].label}</td></tr>`; }).join('')}
+      </tbody><tfoot><tr><td colspan="4">TOTAL</td><td class="num">${money(t.est)}</td><td class="num">${money(t.adv)}</td><td class="num">${money(t.paid)}</td><td class="num">${money(t.rem)}</td><td>${t.full}/${t.count} fully paid</td></tr></tfoot></table>` : '<p>No vendors.</p>'}`;
+  };
+  const cats = categorySummary();
+  $('#printArea').innerHTML = `<h1>Wedding Budget Report</h1><div>Generated ${esc(new Date().toLocaleString('en-GB'))}</div>
+    <h2>Summary</h2><table><tbody>
+      <tr><th>Total Estimated Budget</th><td class="num">${money(all.est)}</td><th>Total Advance Paid</th><td class="num">${money(all.adv)}</td></tr>
+      <tr><th>Total Paid</th><td class="num">${money(all.paid)}</td><th>Total Outstanding</th><td class="num">${money(all.rem)}</td></tr>
+      <tr><th>Fully Paid Vendors</th><td class="num">${all.full} of ${all.count}</td><th>Paid (% of budget)</th><td class="num">${all.pct.toFixed(1)}%</td></tr>
+    </tbody></table>
+    ${secTable('pre')}${secTable('wed')}
+    <h2>Category Summary</h2><table><thead><tr><th>Section</th><th>Category</th><th class="num">Estimated</th><th class="num">Paid</th><th class="num">Remaining</th></tr></thead><tbody>${cats.map(c => `<tr><td>${SECTIONS[c.sec]}</td><td>${esc(c.category)}</td><td class="num">${money(c.est)}</td><td class="num">${money(c.paid)}</td><td class="num">${money(c.rem)}</td></tr>`).join('')}</tbody></table>`;
+  window.print();
+}
+
+/* ================= Global click handling ================= */
+document.addEventListener('click', e => {
+  const act = e.target.closest('[data-act]');
+  if (act && act.dataset.id) {
+    e.preventDefault();
+    const ov = act.closest('.modal-overlay'); if (ov) ov.close();
+    handleAction(act.dataset.act, act.dataset.id); return;
+  }
+  const att = e.target.closest('[data-att]');
+  if (att) { if (att.dataset.att === 'prev') openPreview(att.dataset.aid); else if (att.dataset.att === 'dl') downloadAttachment(att.dataset.aid); return; }
+  const go = e.target.closest('[data-go]'); if (go) { showView(go.dataset.go); return; }
+  const ex = e.target.closest('[data-exp]'); if (ex) { doExport(ex.dataset.exp); return; }
+  const add = e.target.closest('[data-add]'); if (add) { openVendorForm({ section: add.dataset.add || '' }); return; }
+  const clr = e.target.closest('[data-clear]');
+  if (clr) { const s = clr.dataset.clear; Object.assign(state.ui[s], { search:'', cat:'', status:'' }); $('#' + s + '-search').value = ''; renderSection(s); return; }
+  if (e.target.closest('[data-backup-now]')) { exportBackup(); return; }
+  if (e.target.closest('[data-print]')) { printReport(); return; }
+  if (e.target.closest('[data-zip]')) { downloadAllInvoices(); return; }
+  if (e.target.closest('[data-reset]')) { resetDemo(); return; }
+});
+
+/* ================= Init ================= */
+async function init(){
+  initSection('pre'); initSection('wed'); initPayments();
+  let start = 'dashboard';
+  try { start = localStorage.getItem('wbt-view') || 'dashboard'; } catch (e) {}
+  showView(start);
+  try {
+    await DB.open();
+    await loadAll();
+    if (!state.meta.seeded) {
+      if (!state.vendors.length) await seedData();
+      else { state.meta.seeded = true; await saveMeta(); }
+      await loadAll();
+    }
+    renderAll();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  } catch (err) {
+    console.error(err);
+    $('#view-dashboard').innerHTML = `<div class="panel"><h3>Storage could not be opened</h3><p>${esc(errMsg(err))}</p><p class="muted">Open this file in Google Chrome (not in Incognito mode) and make sure site data is allowed.</p></div>`;
+    showView('dashboard');
+  }
+}
+window.__WBT = { state, calc, totals, buildCombinedWorkbook, writeWorkbook, doExport, exportBackup, importBackup, validateBackup, refresh, DB, postProcessXlsx, downloadAllInvoices };
+window.__WBT_ready = init();
+})();
+</script>
+</body>
+</html>
